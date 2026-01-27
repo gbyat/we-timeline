@@ -3,35 +3,39 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WE Timeline\n"
+"Report-Msgid-Bugs-To: https://github.com/gbyat/we-timeline/issues\n"
+"POT-Creation-Date: 2026-01-27 21:44+0000\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: webentwicklerin <gabriele@webentwicklerin.at>\n"
+"Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language-Team: webentwicklerin <gabriele@webentwicklerin.at>\n"
-"Last-Translator: Gabriele Laesser <gabriele@webentwicklerin.at>\n"
-"POT-Creation-Date: 2026-01-27 21:44+0000\n"
-"Report-Msgid-Bugs-To: https://github.com/gbyat/we-timeline/issues\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-Basepath: ..\n"
-"X-Poedit-KeywordsList: __;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_ex:1,2c;_n:1,2;_n_noop:1,2;_nx:1,2,4c;_nx_noop:1,2,3c;_x:1,2c;esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: *.js\n"
-"X-Poedit-SourceCharset: UTF-8\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../includes/class-post-type.php:41
 msgid "Timeline Items"
-msgstr ""
+msgstr "Zeitleisten-Elemente"
 
 #: ../includes/class-post-type.php:42
 msgid "Timeline Item"
-msgstr ""
+msgstr "Timeline-Eintrag"
 
 #: ../includes/class-post-type.php:43, ../includes/class-settings.php:41
 msgid "Timeline"
-msgstr ""
+msgstr "Zeitleiste"
 
 #: ../includes/class-post-type.php:44
 msgid "Add New"
-msgstr ""
+msgstr "hinzufügen"
 
 #: ../includes/class-post-type.php:45
 msgid "Add New Timeline Item"
@@ -63,11 +67,11 @@ msgstr ""
 
 #: ../includes/class-post-type.php:75
 msgid "Timeline Date"
-msgstr ""
+msgstr "Datum"
 
 #: ../includes/class-post-type.php:95
 msgid "Date:"
-msgstr ""
+msgstr "Datum:"
 
 #: ../includes/class-renderer.php:64
 msgid "No timeline items found."
@@ -75,7 +79,7 @@ msgstr ""
 
 #: ../includes/class-renderer.php:409
 msgid "Read more"
-msgstr ""
+msgstr "Beitrag lesen"
 
 #: ../includes/class-settings.php:40
 msgid "WE Timeline Settings"
@@ -83,7 +87,7 @@ msgstr ""
 
 #: ../includes/class-settings.php:67
 msgid "General Settings"
-msgstr ""
+msgstr "Allgemeine Einstellungen"
 
 #: ../includes/class-settings.php:74
 msgid "Enable Timeline Post Type"
@@ -98,16 +102,18 @@ msgid "Enable the Timeline custom post type"
 msgstr ""
 
 #: ../includes/class-settings.php:147
-msgid "If enabled, a custom post type \"Timeline\" will be registered. You can use any existing post type for timelines, so this is optional."
+msgid ""
+"If enabled, a custom post type \"Timeline\" will be registered. You can use "
+"any existing post type for timelines, so this is optional."
 msgstr ""
 
 #: ../includes/class-settings.php:166
 msgid "Settings saved."
-msgstr ""
+msgstr "Einstellungen gespeichert."
 
 #: ../includes/class-settings.php:179
 msgid "Save Settings"
-msgstr ""
+msgstr "Einstellungen speichern"
 
 #: ../we-timeline.php:113
 msgid "Error: render.php not found."
@@ -115,19 +121,21 @@ msgstr ""
 
 #: ../we-timeline.php:223
 msgid "No changelog available."
-msgstr ""
+msgstr "Keine Changelog vorhanden"
 
 #: ../we-timeline.php:294
 msgid "Installation"
-msgstr ""
+msgstr "Installation"
 
 #: ../we-timeline.php:296
-msgid "Upload the plugin files to the /wp-content/plugins/we-timeline directory, or install the plugin through the WordPress plugins screen directly."
+msgid ""
+"Upload the plugin files to the /wp-content/plugins/we-timeline directory, or "
+"install the plugin through the WordPress plugins screen directly."
 msgstr ""
 
 #: ../we-timeline.php:297
 msgid "Activate the plugin through the 'Plugins' screen in WordPress."
-msgstr ""
+msgstr "Aktivieren Sie das Plugin über den Bildschirm „Plugins“ in WordPress."
 
 #: ../we-timeline.php:298
 msgid "Add the Timeline block to your pages or posts."

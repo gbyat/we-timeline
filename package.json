@@ -1,21 +1,20 @@
 {
   "name": "we-timeline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WordPress plugin with Gutenberg blocks for timelines",
   "author": "webentwicklerin, Gabriele Laesser",
   "license": "GPL-2.0-or-later",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/gbyat/we-timeline.git"
-  },
   "scripts": {
     "build": "wp-scripts build",
     "start": "wp-scripts start",
     "lint:js": "wp-scripts lint-js",
     "lint:css": "wp-scripts lint-style",
     "pot": "node scripts/generate-pot.js",
-    "sync-version": "node scripts/sync-version.js",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "release:patch": "node scripts/release.js patch",
+    "release:minor": "node scripts/release.js minor",
+    "release:major": "node scripts/release.js major",
+    "sync-version": "node scripts/sync-version.js"
   },
   "devDependencies": {
     "@wordpress/scripts": "^27.0.0",

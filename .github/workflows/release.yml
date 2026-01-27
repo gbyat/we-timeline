@@ -1,0 +1,87 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Generate POT file
+        run: npm run pot
+
+      - name: Create ZIP file
+        run: |
+          # Create a temporary directory for the plugin
+          mkdir -p temp
+
+          # Copy main PHP file
+          cp we-timeline.php temp/
+
+          # Copy build directory
+          if [ ! -d "build" ]; then
+            echo "ERROR: Build directory not found!"
+            exit 1
+          fi
+          cp -r build temp/
+
+          # Copy includes directory
+          if [ ! -d "includes" ]; then
+            echo "ERROR: Includes directory not found!"
+            exit 1
+          fi
+          cp -r includes temp/
+
+          # Copy languages directory (optional)
+          if [ -d "languages" ]; then
+            cp -r languages temp/
+          fi
+
+          # Copy assets directory (optional)
+          if [ -d "assets" ]; then
+            cp -r assets temp/
+          fi
+
+          # Copy documentation files
+          for doc in README.md CHANGELOG.md LICENSE; do
+            if [ -f "$doc" ]; then
+              cp "$doc" temp/
+            fi
+          done
+
+          # Create ZIP file from temp directory contents
+          cd temp
+          zip -r ../we-timeline.zip . > /dev/null
+          cd ..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: we-timeline.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          name: "Release ${{ github.ref_name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
