@@ -1,0 +1,21 @@
+{
+	"name": "webentwicklerin/we-timeline",
+	"description": "WordPress plugin with Gutenberg blocks for timelines",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "webentwicklerin, Gabriele Laesser",
+			"email": "info@webentwicklerin.at",
+			"homepage": "https://webentwicklerin.at"
+		}
+	],
+	"require": {
+		"php": ">=7.4"
+	},
+	"autoload": {
+		"psr-4": {
+			"Webentwicklerin\\Timeline\\": "includes/"
+		}
+	}
+}

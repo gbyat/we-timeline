@@ -1,0 +1,119 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "we-timeline/timeline",
+  "title": "Timeline",
+  "category": "widgets",
+  "icon": "calendar-alt",
+  "description": "Display content in a timeline layout with various options.",
+  "keywords": [
+    "timeline",
+    "history",
+    "events"
+  ],
+  "textdomain": "we-timeline",
+  "supports": {
+    "align": [
+      "wide",
+      "full"
+    ],
+    "html": false,
+    "color": {
+      "text": true,
+      "background": true,
+      "link": true,
+      "__experimentalDefaultControls": {
+        "text": true,
+        "background": true,
+        "link": true
+      }
+    }
+  },
+  "attributes": {
+    "layout": {
+      "type": "string",
+      "default": "vertical"
+    },
+    "position": {
+      "type": "string",
+      "default": "left"
+    },
+    "visibleItems": {
+      "type": "number",
+      "default": 3
+    },
+    "icon": {
+      "type": "string",
+      "default": "calendar-alt"
+    },
+    "iconSize": {
+      "type": "string",
+      "default": "medium"
+    },
+    "postType": {
+      "type": "string",
+      "default": "post"
+    },
+    "taxonomy": {
+      "type": "string",
+      "default": ""
+    },
+    "term": {
+      "type": "integer",
+      "default": 0
+    },
+    "dateField": {
+      "type": "string",
+      "default": "date"
+    },
+    "sortOrder": {
+      "type": "string",
+      "default": "asc"
+    },
+    "excludeFromMainLoop": {
+      "type": "boolean",
+      "default": false
+    },
+    "excludeFromCategoryLists": {
+      "type": "boolean",
+      "default": false
+    },
+    "showMenu": {
+      "type": "boolean",
+      "default": false
+    },
+    "menuGranularity": {
+      "type": "string",
+      "default": "auto"
+    },
+    "timelineLineColor": {
+      "type": "string",
+      "default": ""
+    },
+    "timelineLineActiveColor": {
+      "type": "string",
+      "default": ""
+    },
+    "itemBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "itemBorderRadius": {
+      "type": "string",
+      "default": ""
+    },
+    "iconColor": {
+      "type": "string",
+      "default": ""
+    },
+    "dateColor": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php"
+}

@@ -1,0 +1,1200 @@
+/**
+ * Timeline Block Styles
+ *
+ * @package Webentwicklerin\Timeline
+ */
+
+.wp-block-we-timeline-timeline {
+    // Default colors (fallback if no WordPress colors are set)
+    --we-timeline-primary: #0073aa;
+    --we-timeline-secondary: #005177;
+    --we-timeline-background: #ffffff;
+    --we-timeline-text: #333333;
+    --we-timeline-accent: #00a0d2;
+    --we-timeline-border: #cccccc;
+    --we-timeline-line-color: #e0e0e0;
+    --we-timeline-line-active-color: #0073aa;
+    --we-timeline-item-background: transparent;
+    --we-timeline-item-border-radius: 0;
+    --we-timeline-item-shadow: none;
+
+    // Use native WordPress background color if set
+    // WordPress adds background-color as inline style or CSS variable
+    &.has-background {
+        --we-timeline-background: var(--wp--preset--color--background, var(--wp--custom--color--background, #ffffff));
+
+        // Apply background color to items (can be overridden by item-specific background)
+        .we-timeline__item {
+            background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
+        }
+    }
+
+    // Use native WordPress text color if set
+    // WordPress adds color as inline style or CSS variable
+    &.has-text-color {
+        --we-timeline-text: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333));
+        color: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333));
+
+        // Apply text color to all text elements
+        .we-timeline__item {
+
+            &-title,
+            &-excerpt {
+                color: inherit;
+            }
+
+            &-title a {
+                color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333))));
+            }
+        }
+    }
+
+    // Use native WordPress link color if set
+    &.has-link-color {
+        --we-timeline-primary: var(--wp--preset--color--link, var(--wp--custom--color--link, #0073aa));
+    }
+
+    .we-timeline {
+        &__items {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+        }
+
+        &__item {
+            position: relative;
+            padding: 1.5rem;
+            // Use WordPress background color if set, otherwise fallback
+            background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
+            border: 1px solid var(--we-timeline-border);
+            border-radius: var(--we-timeline-item-border-radius, 8px);
+            box-shadow: var(--we-timeline-item-shadow, 0 2px 8px rgba(0, 0, 0, 0.1));
+            transition: box-shadow 0.2s, opacity 0.2s;
+
+            &:hover {
+                box-shadow: var(--we-timeline-item-shadow-hover, 0 4px 12px rgba(0, 0, 0, 0.15));
+            }
+
+            // Highlight active item (when scrolling)
+            &.is-active {
+                box-shadow: var(--we-timeline-item-shadow-active, 0 4px 16px rgba(0, 0, 0, 0.2));
+                opacity: 1;
+                border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+            }
+
+            &-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            &-thumbnail {
+                width: 100%;
+                margin-bottom: 0;
+
+
+                img {
+                    width: 100%;
+                    height: auto;
+                    border-radius: 4px;
+                    object-fit: cover;
+                }
+            }
+
+            &-body {
+                display: flex;
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            &-date {
+                display: block;
+                // Use custom date color if set, otherwise WordPress link color, otherwise fallback
+                color: var(--we-timeline-date-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-accent))));
+                font-weight: 600;
+                font-size: 0.9rem;
+                margin-bottom: 0.5rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            &-title {
+                margin: 0 0 1rem 0;
+                font-size: 1.5rem;
+                line-height: 1.3;
+                // Inherit text color from parent
+                color: inherit;
+
+                a {
+                    // Use WordPress link color if set, otherwise text color, otherwise fallback
+                    color: var(--wp--preset--color--link, var(--wp--custom--color--link, currentColor));
+                    text-decoration: none;
+                    transition: color 0.2s;
+
+                    &:hover {
+                        color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                    }
+                }
+            }
+
+            &-excerpt {
+                // Inherit text color from parent
+                color: inherit;
+                line-height: 1.6;
+            }
+
+            &-read-more {
+                display: inline-block;
+                width: auto;
+                margin-top: 0.75rem;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.9rem;
+                font-weight: 600;
+                text-decoration: none;
+                color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                background: transparent;
+                border: 2px solid var(--we-timeline-line-active-color, var(--we-timeline-line-color, var(--we-timeline-border)));
+                border-radius: 4px;
+                transition: color 0.2s, background 0.2s, border-color 0.2s;
+
+                &:hover {
+                    color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+                    background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                    border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                }
+            }
+        }
+    }
+
+    // Vertical layout - Left (default)
+    &.we-timeline--vertical-left {
+        .we-timeline__items {
+            padding-left: 3rem;
+            position: relative; // Wichtig: Container muss position: relative sein
+
+            // Background line (gray)
+            &::before {
+                content: '';
+                position: absolute;
+                left: 1rem;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: var(--we-timeline-line-color, var(--we-timeline-border));
+                z-index: 0;
+            }
+
+            // Progress line (colored, fills on scroll)
+            &::after {
+                content: '';
+                position: absolute;
+                left: 1rem;
+                top: 0;
+                width: 3px;
+                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                z-index: 1;
+                height: var(--progress-height, 0%);
+                transition: height 0.1s ease-out;
+            }
+
+            .we-timeline__item {
+                position: relative;
+                background: var(--we-timeline-item-background, transparent);
+                border-radius: var(--we-timeline-item-border-radius, 0);
+                box-shadow: var(--we-timeline-item-shadow, none);
+                padding-top: 1.5rem; // Platz für Icon oben
+
+                &-content {
+                    flex-direction: row;
+                    align-items: flex-start;
+                    gap: 1.5rem;
+                }
+
+                &-thumbnail {
+                    width: 40%;
+                    flex-shrink: 0;
+
+                    img {
+                        width: 100%;
+                        height: auto;
+                        border-radius: 4px;
+                        object-fit: cover;
+                    }
+                }
+
+                &-body {
+                    flex: 1;
+                }
+
+                &-icon {
+                    position: absolute;
+                    left: calc(1rem - 3rem); // Position auf der Timeline-Linie (1rem Linie, -3rem Padding-Ausgleich)
+                    top: 0; // Relativ zum Item
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    border-radius: 50%;
+                    z-index: 10; // Höherer z-index, damit es über der Linie ist
+                    transform: translateX(-50%);
+                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+                    &--small {
+                        width: 1rem;
+                        height: 1rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 0.75rem;
+                            width: 0.75rem;
+                            height: 0.75rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.5rem;
+                            height: 0.5rem;
+                        }
+                    }
+
+                    &--medium {
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 1rem;
+                            width: 1rem;
+                            height: 1rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.75rem;
+                            height: 0.75rem;
+                        }
+                    }
+
+                    &--large {
+                        width: 2rem;
+                        height: 2rem;
+                        border-width: 3px;
+
+                        .dashicons {
+                            font-size: 1.25rem;
+                            width: 1.25rem;
+                            height: 1.25rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 1rem;
+                            height: 1rem;
+                        }
+                    }
+
+                    .dashicons {
+                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+
+                    &-dot {
+                        display: block;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+                }
+
+                &[data-has-icon="false"]::before {
+                    content: '';
+                    position: absolute;
+                    left: calc(1rem - 3rem); // Position auf der Timeline-Linie
+                    top: 0;
+                    width: 0.75rem;
+                    height: 0.75rem;
+                    border-radius: 50%;
+                    background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    border: 2px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    box-shadow: 0 0 0 2px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    z-index: 10;
+                    transform: translateX(-50%);
+                }
+            }
+        }
+    }
+
+    // Vertical layout - Right
+    &.we-timeline--vertical-right {
+        .we-timeline__items {
+            padding-right: 3rem;
+            position: relative; // Wichtig: Container muss position: relative sein
+
+            // Background line (gray)
+            &::before {
+                content: '';
+                position: absolute;
+                right: 1rem;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: var(--we-timeline-line-color, var(--we-timeline-border));
+                z-index: 0;
+            }
+
+            // Progress line (colored, fills on scroll)
+            &::after {
+                content: '';
+                position: absolute;
+                right: 1rem;
+                top: 0;
+                width: 3px;
+                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                z-index: 1;
+                height: var(--progress-height, 0%);
+                transition: height 0.1s ease-out;
+            }
+
+            .we-timeline__item {
+                position: relative;
+                background: var(--we-timeline-item-background, transparent);
+                border-radius: var(--we-timeline-item-border-radius, 0);
+                box-shadow: var(--we-timeline-item-shadow, none);
+                padding-top: 0; // Kein Padding mehr, Icons sind außerhalb
+
+                &-content {
+                    flex-direction: row;
+                    align-items: flex-start;
+                    gap: 1.5rem;
+                }
+
+                &-thumbnail {
+                    width: 40%;
+                    flex-shrink: 0;
+
+                    img {
+                        width: 100%;
+                        height: auto;
+                        border-radius: 4px;
+                        object-fit: cover;
+                    }
+                }
+
+                &-body {
+                    flex: 1;
+                }
+
+                &-icon {
+                    position: absolute;
+                    right: calc(1rem - 3rem); // Position auf der Timeline-Linie (1rem Linie, -3rem Padding-Ausgleich)
+                    top: 0; // Relativ zum Item
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    border-radius: 50%;
+                    z-index: 10; // Höherer z-index, damit es über der Linie ist
+                    transform: translateX(50%);
+                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+                    &--small {
+                        width: 1rem;
+                        height: 1rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 0.75rem;
+                            width: 0.75rem;
+                            height: 0.75rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.5rem;
+                            height: 0.5rem;
+                        }
+                    }
+
+                    &--medium {
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 1rem;
+                            width: 1rem;
+                            height: 1rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.75rem;
+                            height: 0.75rem;
+                        }
+                    }
+
+                    &--large {
+                        width: 2rem;
+                        height: 2rem;
+                        border-width: 3px;
+
+                        .dashicons {
+                            font-size: 1.25rem;
+                            width: 1.25rem;
+                            height: 1.25rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 1rem;
+                            height: 1rem;
+                        }
+                    }
+
+                    .dashicons {
+                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+
+                    &-dot {
+                        display: block;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+                }
+
+                &[data-has-icon="false"]::before {
+                    content: '';
+                    position: absolute;
+                    right: calc(1rem - 3rem); // Position auf der Timeline-Linie
+                    top: 0;
+                    width: 0.75rem;
+                    height: 0.75rem;
+                    border-radius: 50%;
+                    background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    border: 2px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    box-shadow: 0 0 0 2px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    z-index: 10;
+                    transform: translateX(50%);
+                }
+            }
+        }
+    }
+
+    // Vertical layout - Alternating
+    &.we-timeline--vertical-alternating {
+        .we-timeline__items {
+            position: relative;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: var(--we-timeline-line-color, var(--we-timeline-border));
+                transform: translateX(-50%);
+                z-index: 0;
+            }
+
+            // Position icons on the timeline line for left items (icon goes to the right edge)
+            .we-timeline__item--left .we-timeline__item-icon {
+                left: auto !important;
+                right: -1.5rem !important;
+                transform: translateX(50%) !important;
+            }
+
+            .we-timeline__item--left[data-has-icon="false"]::before {
+                left: auto !important;
+                right: -1.5rem !important;
+                transform: translateX(50%) !important;
+            }
+
+            // Position icons on the timeline line for right items (icon goes to the left edge)
+            .we-timeline__item--right .we-timeline__item-icon {
+                left: -1.5rem !important;
+                right: auto !important;
+                transform: translateX(-50%) !important;
+            }
+
+            .we-timeline__item--right[data-has-icon="false"]::before {
+                left: -1.5rem !important;
+                right: auto !important;
+                transform: translateX(-50%) !important;
+            }
+
+            // Progress line (filled portion)
+            &::after {
+                content: '';
+                position: absolute;
+                left: 50%;
+                top: 0;
+                width: 3px;
+                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                transform: translateX(-50%);
+                z-index: 1;
+                height: var(--progress-height, 0%);
+                transition: height 0.3s ease;
+            }
+
+            .we-timeline__item {
+                position: relative;
+                z-index: 2; // Über der Progress-Linie (z-index: 1)
+                width: calc(50% - 1.5rem); // 1.5rem Abstand von der Linie
+                max-width: 500px; // Max width für bessere Lesbarkeit
+                margin-bottom: 2.5rem;
+                background: var(--we-timeline-item-background, transparent);
+                border-radius: var(--we-timeline-item-border-radius, 0);
+                padding: 1.5rem;
+                box-shadow: var(--we-timeline-item-shadow, none);
+                transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+
+                // Highlight active item
+                &.is-active {
+                    box-shadow: var(--we-timeline-item-shadow-active, 0 4px 12px rgba(0, 0, 0, 0.15));
+                    opacity: 1;
+                    border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                }
+
+                // Fade out non-active items slightly when one is active
+                &:not(.is-active) {
+                    opacity: 0.85;
+                }
+
+                &-icon {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    border-radius: 50%;
+                    z-index: 10; // Höherer z-index, damit es über der Linie ist
+                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+                    // Icon sizes (smaller than before)
+                    &--small {
+                        width: 0.75rem;
+                        height: 0.75rem;
+                        border-width: 1px;
+
+                        .dashicons {
+                            font-size: 0.5rem;
+                            width: 0.5rem;
+                            height: 0.5rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.4rem;
+                            height: 0.4rem;
+                        }
+                    }
+
+                    &--medium {
+                        width: 1rem;
+                        height: 1rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 0.75rem;
+                            width: 0.75rem;
+                            height: 0.75rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.6rem;
+                            height: 0.6rem;
+                        }
+                    }
+
+                    &--large {
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        border-width: 2px;
+
+                        .dashicons {
+                            font-size: 1rem;
+                            width: 1rem;
+                            height: 1rem;
+                        }
+
+                        .we-timeline__item-icon-dot {
+                            width: 0.9rem;
+                            height: 0.9rem;
+                        }
+                    }
+
+                    .dashicons {
+                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+
+                    &-dot {
+                        display: block;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+                }
+
+                // Fallback circle if no icon
+                &[data-has-icon="false"]::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 0.75rem;
+                    height: 0.75rem;
+                    border-radius: 50%;
+                    background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                    border: 2px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    box-shadow: 0 0 0 2px var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                    z-index: 2;
+                }
+
+                // Arrow pointing to icon/line (only show if item has background)
+                &::after {
+                    content: '';
+                    position: absolute;
+                    top: 0.5rem;
+                    width: 0;
+                    height: 0;
+                    border-style: solid;
+                    z-index: 1;
+                    display: none; // Hidden by default
+                }
+
+                // Show arrow if item has background (check via data attribute or CSS variable)
+                &[data-has-background="true"]::after {
+                    display: block;
+                }
+
+                &--left {
+                    margin-right: calc(50% + 1.5rem); // Abstand von der Linie (50% + 1.5rem)
+                    margin-left: 0;
+                    padding-right: 1.5rem; // Abstand zwischen Item und Icon
+                    padding-top: 1.5rem; // Platz für Icon oben
+
+                    // Arrow pointing right to icon (centered on line)
+                    &::after {
+                        right: -0.75rem;
+                        top: 0.5rem;
+                        border-width: 5px 0 5px 7px;
+                        border-color: transparent transparent transparent var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+                    }
+                }
+
+                &--right {
+                    margin-left: calc(50% + 1.5rem); // Abstand von der Linie (50% + 1.5rem)
+                    margin-right: 0;
+                    padding-left: 1.5rem; // Abstand zwischen Item und Icon
+                    padding-top: 1.5rem; // Platz für Icon oben
+
+                    // Arrow pointing left to icon (centered on line)
+                    &::after {
+                        left: -0.75rem;
+                        top: 0.5rem;
+                        border-width: 5px 7px 5px 0;
+                        border-color: transparent var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))) transparent transparent;
+                    }
+                }
+            }
+        }
+    }
+
+    // Horizontal scroll layout - Top (default)
+    &.we-timeline--horizontal-scroll-top {
+        .we-timeline__items {
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            padding-bottom: 1rem;
+            padding-top: 2.5rem; // Platz für Icons über der Linie
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: var(--we-timeline-border) var(--we-timeline-background);
+            gap: 1rem;
+
+            .we-timeline__item {
+                flex: 0 0 calc((100% - (var(--visible-items, 3) - 1) * 1rem) / var(--visible-items, 3));
+                min-width: 280px;
+                position: relative;
+                border-top: 3px solid var(--we-timeline-line-color, var(--we-timeline-border));
+
+                &-icon {
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    width: 2rem;
+                    height: 2rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    border-radius: 50%;
+                    z-index: 10;
+                    transform: translate(-50%, -50%);
+                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+                    .dashicons {
+                        font-size: 1.25rem;
+                        width: 1.25rem;
+                        height: 1.25rem;
+                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+
+                    &-dot {
+                        width: 0.75rem;
+                        height: 0.75rem;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+                }
+
+                &[data-has-icon="false"]::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    width: 1rem;
+                    height: 1rem;
+                    border-radius: 50%;
+                    background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    border: 3px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    box-shadow: 0 0 0 2px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    z-index: 10;
+                    transform: translate(-50%, -50%);
+                }
+            }
+
+            &::-webkit-scrollbar {
+                height: 8px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                border-radius: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: var(--we-timeline-border);
+                border-radius: 4px;
+
+                &:hover {
+                    background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-accent)));
+                }
+            }
+        }
+    }
+
+    // Horizontal scroll layout - Bottom
+    &.we-timeline--horizontal-scroll-bottom {
+        .we-timeline__items {
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            padding-top: 1rem;
+            padding-bottom: 2.5rem; // Platz für Icons unter der Linie
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: var(--we-timeline-border) var(--we-timeline-background);
+            gap: 1rem;
+
+            .we-timeline__item {
+                flex: 0 0 calc((100% - (var(--visible-items, 3) - 1) * 1rem) / var(--visible-items, 3));
+                min-width: 280px;
+                position: relative;
+                border-bottom: 3px solid var(--we-timeline-line-color, var(--we-timeline-border));
+
+                &-icon {
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    width: 2rem;
+                    height: 2rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    border-radius: 50%;
+                    z-index: 10;
+                    transform: translate(-50%, 50%);
+                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+                    .dashicons {
+                        font-size: 1.25rem;
+                        width: 1.25rem;
+                        height: 1.25rem;
+                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+
+                    &-dot {
+                        width: 0.75rem;
+                        height: 0.75rem;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    }
+                }
+
+                &[data-has-icon="false"]::before {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 50%;
+                    width: 1rem;
+                    height: 1rem;
+                    border-radius: 50%;
+                    background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    border: 3px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                    box-shadow: 0 0 0 2px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    z-index: 10;
+                    transform: translate(-50%, 50%);
+                }
+            }
+
+            &::-webkit-scrollbar {
+                height: 8px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                border-radius: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: var(--we-timeline-border);
+                border-radius: 4px;
+
+                &:hover {
+                    background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-accent)));
+                }
+            }
+        }
+    }
+
+    // Horizontal scroll layout - Alternating
+    &.we-timeline--horizontal-scroll-alternating {
+        .we-timeline__items {
+            display: flex;
+            flex-direction: row;
+            overflow-x: auto;
+            overflow-y: visible;
+            scroll-behavior: smooth;
+            padding-top: 0;
+            padding-bottom: 0;
+            min-height: 400px;
+            position: relative;
+            align-items: center;
+            scrollbar-width: thin;
+            scrollbar-color: var(--we-timeline-border) var(--we-timeline-background);
+
+            &::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: var(--we-timeline-border);
+                transform: translateY(-50%);
+                z-index: 0;
+            }
+
+            .we-timeline__item {
+                position: relative;
+                flex-shrink: 0;
+                // Calculate width based on visible items
+                width: calc((100% - 2rem) / var(--visible-items, 3));
+                min-width: 300px;
+                max-width: 500px;
+                margin: 0 1rem;
+
+                &--top {
+                    align-self: flex-start;
+                    margin-top: 0;
+                    padding-bottom: 2rem;
+
+                    .we-timeline__item-icon {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 2.5rem;
+                        height: 2.5rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                        border-radius: 50%;
+                        border: 3px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                        z-index: 10; // Höherer z-index, damit es über der Linie ist
+                        transform: translate(-50%, -50%);
+
+                        .dashicons {
+                            font-size: 1.5rem;
+                            width: 1.5rem;
+                            height: 1.5rem;
+                            color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                        }
+                    }
+
+                    &[data-has-icon="false"]::before {
+                        content: '';
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        border-radius: 50%;
+                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                        border: 4px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                        box-shadow: 0 0 0 3px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                        z-index: 10;
+                        transform: translate(-50%, -50%);
+                    }
+                }
+
+                &--bottom {
+                    align-self: flex-end;
+                    margin-bottom: 0;
+                    padding-top: 2rem;
+
+                    .we-timeline__item-icon {
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 2.5rem;
+                        height: 2.5rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                        border-radius: 50%;
+                        border: 3px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                        z-index: 10; // Höherer z-index, damit es über der Linie ist
+                        transform: translate(-50%, -50%);
+
+                        .dashicons {
+                            font-size: 1.5rem;
+                            width: 1.5rem;
+                            height: 1.5rem;
+                            color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                        }
+                    }
+
+                    &[data-has-icon="false"]::before {
+                        content: '';
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        width: 1.5rem;
+                        height: 1.5rem;
+                        border-radius: 50%;
+                        background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                        border: 4px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                        box-shadow: 0 0 0 3px var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+                        z-index: 1;
+                        transform: translate(-50%, -50%);
+                    }
+                }
+            }
+
+            &::-webkit-scrollbar {
+                height: 8px;
+            }
+
+            &::-webkit-scrollbar-track {
+                background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                border-radius: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+                background: var(--we-timeline-border);
+                border-radius: 4px;
+
+                &:hover {
+                    background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-accent)));
+                }
+            }
+        }
+    }
+
+    // Wide alignment
+    &.alignwide {
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+
+        .we-timeline__items {
+            max-width: 100%;
+        }
+    }
+
+    // Full alignment
+    &.alignfull {
+        max-width: 100%;
+        width: 100%;
+
+        .we-timeline__items {
+            max-width: 100%;
+        }
+    }
+}
+
+// Responsive styles
+@media (max-width: 768px) {
+    .wp-block-we-timeline-timeline {
+        .we-timeline {
+            &__item {
+                &-content {
+                    flex-direction: column;
+                }
+
+                &-thumbnail {
+                    width: 100%;
+                }
+            }
+        }
+
+        &.we-timeline--vertical-left,
+        &.we-timeline--vertical-right {
+            .we-timeline__items {
+                padding-left: 2rem;
+                padding-right: 2rem;
+
+                &::before {
+                    left: 0.5rem;
+                    right: 0.5rem;
+                }
+
+                .we-timeline__item {
+                    &-icon {
+                        left: -1.75rem;
+                        right: -1.75rem;
+                    }
+
+                    &[data-has-icon="false"]::before {
+                        left: -1.75rem;
+                        right: -1.75rem;
+                    }
+                }
+            }
+        }
+
+        &.we-timeline--vertical-alternating {
+            .we-timeline__items {
+                padding: 0 1rem;
+
+                &::before {
+                    left: 1rem;
+                }
+
+                .we-timeline__item {
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding-left: 3rem !important;
+                    padding-right: 0 !important;
+
+                    &-icon {
+                        left: -1.5rem !important;
+                        right: auto !important;
+                        transform: translateX(-50%) !important;
+                    }
+
+                    &[data-has-icon="false"]::before {
+                        left: -1.5rem !important;
+                        right: auto !important;
+                        transform: translateX(-50%) !important;
+                    }
+                }
+            }
+        }
+
+        &.we-timeline--horizontal-scroll-top,
+        &.we-timeline--horizontal-scroll-bottom,
+        &.we-timeline--horizontal-scroll-alternating {
+            .we-timeline__items {
+                .we-timeline__item {
+                    flex: 0 0 300px;
+                    min-width: 300px;
+                    max-width: 300px;
+                }
+            }
+        }
+    }
+}
+
+// Timeline Menu Styles (embedded in timeline block)
+.wp-block-we-timeline-timeline {
+    position: relative;
+
+    .we-timeline-menu {
+        position: fixed;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 100;
+        background: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-width: 200px;
+        max-height: 80vh;
+        overflow-y: auto;
+
+        &__items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        &__item {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            border-left: 2px solid transparent;
+            color: var(--we-timeline-text, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333)));
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 0.9rem;
+
+            &:hover {
+                background: var(--we-timeline-line-color, var(--we-timeline-border));
+                border-left-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+            }
+
+            // Active state
+            &.is-active {
+                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                border-left-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+                font-weight: 600;
+            }
+        }
+    }
+}
+
+// Responsive: On smaller screens, position menu at top
+@media (max-width: 768px) {
+    .wp-block-we-timeline-timeline {
+        .we-timeline-menu {
+            position: sticky;
+            top: 0;
+            right: auto;
+            transform: none;
+            max-width: 100%;
+            margin-bottom: 2rem;
+
+            &__items {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+        }
+    }
+}
