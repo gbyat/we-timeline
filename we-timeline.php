@@ -4,7 +4,7 @@
  * Plugin Name: WE Timeline
  * Plugin URI: https://github.com/gbyat/we-timeline
  * Description: A WordPress plugin with Gutenberg blocks for creating timelines with various layouts, flexible content sources, and dynamic navigation.
- * Version: 1.0.2
+ * Version: 1.1.0
  * Author: webentwicklerin, Gabriele Laesser
  * Author URI: https://webentwicklerin.at
  * License: GPL-2.0-or-later
@@ -24,7 +24,7 @@ namespace Webentwicklerin\Timeline {
     }
 
     // Define plugin constants.
-    define('WE_TIMELINE_VERSION', '1.0.2');
+    define('WE_TIMELINE_VERSION', '1.1.0');
     define('WE_TIMELINE_PLUGIN_FILE', __FILE__);
     define('WE_TIMELINE_PLUGIN_DIR', plugin_dir_path(__FILE__));
     define('WE_TIMELINE_PLUGIN_URL', plugin_dir_url(__FILE__));
