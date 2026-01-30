@@ -4,6 +4,8 @@
  * @package Webentwicklerin\Timeline
  */
 
+import './timeline-progress.js';
+
 (function () {
     // Process menus embedded in timeline blocks (from showMenu setting).
     const embeddedMenus = document.querySelectorAll('.wp-block-we-timeline-timeline .we-timeline-menu:not(.processed)');

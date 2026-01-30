@@ -278,11 +278,6 @@ class Renderer
                 }
                 $content = apply_filters('the_content', $post_obj->post_content);
 
-                // Check if post is longer than the displayed excerpt (needs "Read more").
-                $excerpt_words  = str_word_count(strip_tags($excerpt));
-                $content_words  = str_word_count(strip_tags($post_obj->post_content));
-                $has_more       = $content_words > $excerpt_words;
-
                 $posts[] = array(
                     'id'         => $post_id,
                     'title'      => get_the_title($post_id),
@@ -291,7 +286,6 @@ class Renderer
                     'date'       => $date_value,
                     'permalink'  => get_permalink($post_id),
                     'thumbnail'  => get_the_post_thumbnail_url($post_id, 'medium'),
-                    'has_more'   => $has_more,
                 );
             }
             wp_reset_postdata();
@@ -404,11 +398,9 @@ class Renderer
                     <div class="we-timeline__item-excerpt">
                         <?php echo wp_kses_post($post['excerpt']); ?>
                     </div>
-                    <?php if (! empty($post['has_more'])) : ?>
-                        <a href="<?php echo esc_url($post['permalink']); ?>" class="we-timeline__item-read-more">
-                            <?php echo esc_html__('Read more', 'we-timeline'); ?>
-                        </a>
-                    <?php endif; ?>
+                    <a href="<?php echo esc_url($post['permalink']); ?>" class="we-timeline__item-read-more">
+                        <?php echo esc_html__('Read more', 'we-timeline'); ?>
+                    </a>
                 </div>
             </div>
         </article>
