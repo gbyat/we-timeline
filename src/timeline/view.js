@@ -33,18 +33,39 @@ import './timeline-progress.js';
             return;
         }
 
-        // Build menu items with granularity.
-        const menuItems = buildMenuItems(timelineItems, granularity);
-        renderMenu(menuContainer, menuItems);
+        const hasServerRenderedItems = menuContainer.querySelectorAll('.we-timeline-menu__item').length > 0;
+        const decadeSuffix = menu.dataset.decadeSuffix || 's';
+        if (hasServerRenderedItems) {
+            attachMenuClickHandlers(menuContainer);
+        } else {
+            const menuItems = buildMenuItems(timelineItems, granularity, decadeSuffix);
+            renderMenu(menuContainer, menuItems);
+        }
 
-        // Add scroll behavior.
         setupScrollBehavior(menu, timelineItems);
     });
 
     /**
+     * Attach click handlers to server-rendered menu buttons (data-value, data-type, data-first-id).
+     */
+    function attachMenuClickHandlers(menuContainer) {
+        menuContainer.querySelectorAll('.we-timeline-menu__item').forEach((btn) => {
+            const value = btn.dataset.value;
+            const type = btn.dataset.type;
+            const firstId = btn.dataset.firstId;
+            btn.addEventListener('click', () => {
+                const targetId = type === 'item' ? value : firstId;
+                if (targetId) {
+                    scrollToItem(targetId);
+                }
+            });
+        });
+    }
+
+    /**
      * Build menu items from timeline items.
      */
-    function buildMenuItems(timelineItems, granularity) {
+    function buildMenuItems(timelineItems, granularity, decadeSuffix = 's') {
         // Normalize granularity value
         const normalizedGranularity = (granularity || 'auto').toLowerCase().trim();
 
@@ -65,7 +86,7 @@ import './timeline-progress.js';
             return autoGranularity(items);
         }
 
-        return groupByGranularity(items, normalizedGranularity);
+        return groupByGranularity(items, normalizedGranularity, decadeSuffix);
     }
 
     /**
@@ -98,7 +119,7 @@ import './timeline-progress.js';
     /**
      * Group items by granularity.
      */
-    function groupByGranularity(items, granularity) {
+    function groupByGranularity(items, granularity, decadeSuffix = 's') {
         if (granularity === 'items') {
             return items.map((item) => ({
                 label: item.title,
@@ -136,7 +157,7 @@ import './timeline-progress.js';
 
                 if (granularity === 'decades') {
                     const decade = parseInt(key);
-                    label = `${decade}s`; // e.g., "1920s"
+                    label = `${decade}${decadeSuffix}`; // e.g., "1920s" or "1920er"
                 } else if (granularity === 'years') {
                     label = key;
                 } else if (granularity === 'months') {
@@ -200,6 +221,8 @@ import './timeline-progress.js';
         const item = document.querySelector(`.we-timeline__item[data-id="${itemId}"]`);
         if (item) {
             item.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Move focus to target so keyboard/screen reader users know where they landed.
+            item.focus({ preventScroll: true });
         }
     }
 
@@ -287,12 +310,14 @@ import './timeline-progress.js';
                 });
             }
 
-            // Update menu active state
+            // Update menu active state and aria-current for accessibility
             menuItems.forEach((btn) => {
                 btn.classList.remove('is-active');
+                btn.removeAttribute('aria-current');
             });
             if (activeMenuItem) {
                 activeMenuItem.classList.add('is-active');
+                activeMenuItem.setAttribute('aria-current', 'true');
             }
         }
         

@@ -21,7 +21,6 @@ class Assets
 	{
 		add_action('enqueue_block_assets', array($this, 'enqueue_block_assets'));
 		add_action('enqueue_block_editor_assets', array($this, 'enqueue_block_editor_assets'));
-		add_action('wp_enqueue_scripts', array($this, 'enqueue_single_post_styles'));
 	}
 
 	/**
@@ -65,38 +64,6 @@ class Assets
 				'we-timeline-style-editor',
 				WE_TIMELINE_PLUGIN_URL . $style_path,
 				array('dashicons'),
-				WE_TIMELINE_VERSION
-			);
-		}
-	}
-
-	/**
-	 * Enqueue styles on single posts that have timeline links.
-	 */
-	public function enqueue_single_post_styles()
-	{
-		if (! is_singular()) {
-			return;
-		}
-
-		$post_id = get_the_ID();
-		if (! $post_id) {
-			return;
-		}
-
-		// Check if this post has timeline page references.
-		$timeline_pages = get_post_meta($post_id, '_we_timeline_page_id', false);
-		if (empty($timeline_pages)) {
-			return;
-		}
-
-		// Enqueue the timeline styles for the "Back to Timeline" link.
-		$style_path = 'build/timeline/index.css';
-		if (file_exists(WE_TIMELINE_PLUGIN_DIR . $style_path)) {
-			wp_enqueue_style(
-				'we-timeline-single',
-				WE_TIMELINE_PLUGIN_URL . $style_path,
-				array(),
 				WE_TIMELINE_VERSION
 			);
 		}

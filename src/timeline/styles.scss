@@ -135,6 +135,20 @@
                     &:hover {
                         color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
                     }
+
+                    &:focus {
+                        outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                        outline-offset: 2px;
+                    }
+
+                    &:focus:not(:focus-visible) {
+                        outline: none;
+                    }
+
+                    &:focus-visible {
+                        outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                        outline-offset: 2px;
+                    }
                 }
             }
 
@@ -163,6 +177,20 @@
                     color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
                     background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
                     border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                }
+
+                &:focus {
+                    outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                    outline-offset: 2px;
+                }
+
+                &:focus:not(:focus-visible) {
+                    outline: none;
+                }
+
+                &:focus-visible {
+                    outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                    outline-offset: 2px;
                 }
             }
         }
@@ -1050,10 +1078,24 @@
             &__item {
                 &-content {
                     flex-direction: column;
+                    align-items: stretch;
                 }
 
                 &-thumbnail {
                     width: 100%;
+                    flex-shrink: 0;
+                    order: -1; // Image always on top
+
+                    img {
+                        width: 100%;
+                        height: auto;
+                    }
+                }
+
+                &-body {
+                    flex: none;
+                    width: 100%;
+                    overflow: visible;
                 }
             }
         }
@@ -1064,20 +1106,43 @@
                 padding-left: 2rem;
                 padding-right: 2rem;
 
-                &::before {
-                    left: 0.5rem;
-                    right: 0.5rem;
+                &::before,
+                &::after {
+                    left: 0.9rem;
+                    right: 0.9rem;
                 }
 
                 .we-timeline__item {
+                    &-content {
+                        flex-direction: column;
+                        align-items: stretch;
+                    }
+
+                    &-thumbnail {
+                        width: 100%;
+                        flex-shrink: 0;
+                        order: -1;
+
+                        img {
+                            width: 100%;
+                            height: auto;
+                        }
+                    }
+
+                    &-body {
+                        flex: none;
+                        width: 100%;
+                        overflow: visible;
+                    }
+
                     &-icon {
-                        left: -1.75rem;
-                        right: -1.75rem;
+                        left: -1.1rem;
+                        right: -1.1rem;
                     }
 
                     &[data-has-icon="false"]::before {
-                        left: -1.75rem;
-                        right: -1.75rem;
+                        left: -1.1rem;
+                        right: -1.1rem;
                     }
                 }
             }
@@ -1155,26 +1220,40 @@
 
         &__item {
             padding: 0.5rem 1rem;
-            background: transparent;
+            background: var(--we-timeline-menu-background-color, transparent);
             border: none;
             border-left: 2px solid transparent;
-            color: var(--we-timeline-text, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333)));
+            color: var(--we-timeline-menu-text-color, var(--we-timeline-text, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333))));
             cursor: pointer;
             transition: all 0.2s;
             text-align: left;
             font-size: 0.9rem;
 
             &:hover {
-                background: var(--we-timeline-line-color, var(--we-timeline-border));
-                border-left-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
-                color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+                background: var(--we-timeline-menu-hover-color, var(--we-timeline-line-color, var(--we-timeline-border)));
+                border-left-color: var(--we-timeline-menu-hover-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary))));
+                color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-background, #{unquote('var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))')}));
+            }
+
+            &:focus {
+                outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                outline-offset: 2px;
+            }
+
+            &:focus:not(:focus-visible) {
+                outline: none;
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
+                outline-offset: 2px;
             }
 
             // Active state
             &.is-active {
                 background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
                 border-left-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
-                color: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+                color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-background, #{unquote('var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))')}));
                 font-weight: 600;
             }
         }

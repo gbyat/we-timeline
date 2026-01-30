@@ -146,7 +146,11 @@ class Renderer
         $item_background_color = $attributes['itemBackgroundColor'] ?? $attributes['style']['color']['itemBackground'] ?? '';
         $icon_color = $attributes['iconColor'] ?? $attributes['style']['color']['icon'] ?? '';
         $date_color = $attributes['dateColor'] ?? $attributes['style']['color']['date'] ?? '';
-        
+        $menu_text_color         = $attributes['menuTextColor'] ?? $attributes['style']['color']['menuText'] ?? '';
+        $menu_text_color_hover   = $attributes['menuTextColorHover'] ?? $attributes['style']['color']['menuTextHover'] ?? '';
+        $menu_background_color   = $attributes['menuBackgroundColor'] ?? $attributes['style']['color']['menuBackground'] ?? '';
+        $menu_hover_color        = $attributes['menuHoverColor'] ?? $attributes['style']['color']['menuHover'] ?? '';
+
         if (! empty($timeline_line_color)) {
             $color_styles[] = '--we-timeline-line-color: ' . esc_attr($timeline_line_color) . ';';
         }
@@ -161,6 +165,18 @@ class Renderer
         }
         if (! empty($date_color)) {
             $color_styles[] = '--we-timeline-date-color: ' . esc_attr($date_color) . ';';
+        }
+        if (! empty($menu_text_color)) {
+            $color_styles[] = '--we-timeline-menu-text-color: ' . esc_attr($menu_text_color) . ';';
+        }
+        if (! empty($menu_text_color_hover)) {
+            $color_styles[] = '--we-timeline-menu-text-color-hover: ' . esc_attr($menu_text_color_hover) . ';';
+        }
+        if (! empty($menu_background_color)) {
+            $color_styles[] = '--we-timeline-menu-background-color: ' . esc_attr($menu_background_color) . ';';
+        }
+        if (! empty($menu_hover_color)) {
+            $color_styles[] = '--we-timeline-menu-hover-color: ' . esc_attr($menu_hover_color) . ';';
         }
         if (! empty($attributes['itemBorderRadius'])) {
             $color_styles[] = '--we-timeline-item-border-radius: ' . esc_attr($attributes['itemBorderRadius']) . ';';
@@ -198,13 +214,19 @@ class Renderer
         $wrapper_attributes['id'] = $block_id;
         $wrapper_attributes['data-timeline-id'] = $block_id;
 
+        $menu_items = $show_menu ? self::build_menu_items($posts, $menu_granularity) : array();
+
         ob_start();
 ?>
         <div <?php echo self::build_attributes($wrapper_attributes); ?>>
             <?php if ($show_menu) : ?>
-                <div class="we-timeline-menu" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>">
-                    <div class="we-timeline-menu__items"></div>
-                </div>
+                <nav class="we-timeline-menu" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" aria-label="<?php echo esc_attr__('Jump to timeline periods', 'we-timeline'); ?>">
+                    <div class="we-timeline-menu__items">
+                        <?php foreach ($menu_items as $menu_item) : ?>
+                            <button type="button" class="we-timeline-menu__item" data-value="<?php echo esc_attr($menu_item['value']); ?>" data-type="<?php echo esc_attr($menu_item['type']); ?>"<?php echo ! empty($menu_item['first_id']) ? ' data-first-id="' . esc_attr($menu_item['first_id']) . '"' : ''; ?>><?php echo esc_html($menu_item['label']); ?></button>
+                        <?php endforeach; ?>
+                    </div>
+                </nav>
             <?php endif; ?>
             <div class="we-timeline__items">
                 <?php
@@ -311,6 +333,105 @@ class Renderer
     }
 
     /**
+     * Get translatable suffix for decade labels (e.g. "s" for 1920s, "er" for 1920er).
+     *
+     * @return string
+     */
+    public static function get_decade_suffix()
+    {
+        /* translators: Suffix for decade labels. E.g. "s" → 1920s (English), "er" → 1920er (German). */
+        return _x('s', 'decade suffix', 'we-timeline');
+    }
+
+    /**
+     * Build menu items from posts (same grouping logic as view.js for editor and initial frontend output).
+     *
+     * @param array  $posts      Timeline posts (id, date, title).
+     * @param string $granularity Menu granularity: auto, decades, years, months, items.
+     * @return array List of menu entries (label, value, type, first_id for groups).
+     */
+    private static function build_menu_items($posts, $granularity)
+    {
+        if (empty($posts)) {
+            return array();
+        }
+
+        $granularity = $granularity ?: 'auto';
+        $granularity = strtolower(trim($granularity));
+
+        if ('auto' === $granularity) {
+            $timestamps = array_map(
+                function ($p) {
+                    return strtotime($p['date']);
+                },
+                $posts
+            );
+            $min_ts = min($timestamps);
+            $max_ts = max($timestamps);
+            $span_years = ($max_ts - $min_ts) / (365 * 24 * 60 * 60);
+            if ($span_years < 1) {
+                $granularity = 'items';
+            } elseif ($span_years <= 5) {
+                $granularity = 'months';
+            } else {
+                $granularity = 'years';
+            }
+        }
+
+        if ('items' === $granularity) {
+            $items = array();
+            foreach ($posts as $post) {
+                $items[] = array(
+                    'label' => $post['title'],
+                    'value' => (string) $post['id'],
+                    'type'  => 'item',
+                );
+            }
+            return $items;
+        }
+
+        $groups = array();
+        foreach ($posts as $post) {
+            $ts = strtotime($post['date']);
+            $y = (int) date('Y', $ts);
+            $m = (int) date('n', $ts);
+            if ('decades' === $granularity) {
+                $key = (int) (floor($y / 10) * 10);
+            } elseif ('years' === $granularity) {
+                $key = $y;
+            } else {
+                $key = $y . '-' . str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+            }
+            if (! isset($groups[ $key ])) {
+                $groups[ $key ] = array();
+            }
+            $groups[ $key ][] = $post;
+        }
+        ksort($groups);
+
+        $type = 'decades' === $granularity ? 'decade' : ('years' === $granularity ? 'year' : 'month');
+        $items = array();
+        foreach ($groups as $key => $group_posts) {
+            $first = $group_posts[0];
+            $ts = strtotime($first['date']);
+            if ('decades' === $granularity) {
+                $label = $key . self::get_decade_suffix();
+            } elseif ('years' === $granularity) {
+                $label = (string) $key;
+            } else {
+                $label = date_i18n('F Y', $ts);
+            }
+            $items[] = array(
+                'label'    => $label,
+                'value'    => (string) $key,
+                'type'     => $type,
+                'first_id' => (string) $first['id'],
+            );
+        }
+        return $items;
+    }
+
+    /**
      * Get date value from post.
      *
      * @param int    $post_id Post ID.
@@ -370,7 +491,7 @@ class Renderer
             $has_background = true;
         }
 ?>
-        <article class="<?php echo esc_attr($item_class); ?>" data-id="<?php echo esc_attr($post['id']); ?>" data-date="<?php echo esc_attr($post['date']); ?>" data-has-icon="<?php echo $has_icon ? 'true' : 'false'; ?>" data-has-background="<?php echo $has_background ? 'true' : 'false'; ?>" data-icon-size="<?php echo esc_attr($icon_size); ?>">
+        <article class="<?php echo esc_attr($item_class); ?>" data-id="<?php echo esc_attr($post['id']); ?>" data-date="<?php echo esc_attr($post['date']); ?>" data-has-icon="<?php echo $has_icon ? 'true' : 'false'; ?>" data-has-background="<?php echo $has_background ? 'true' : 'false'; ?>" data-icon-size="<?php echo esc_attr($icon_size); ?>" tabindex="-1">
             <?php if ($has_icon) : ?>
                 <div class="we-timeline__item-icon we-timeline__item-icon--<?php echo esc_attr($icon_size); ?>">
                     <?php if ($icon === 'dot') : ?>

@@ -43,6 +43,10 @@ export default function Edit({ attributes, setAttributes }) {
 		itemBorderRadius,
 		iconColor,
 		dateColor,
+		menuTextColor,
+		menuTextColorHover,
+		menuBackgroundColor,
+		menuHoverColor,
 	} = attributes;
 
 	// Ensure postType is always set in block attributes.
@@ -123,7 +127,7 @@ export default function Edit({ attributes, setAttributes }) {
 		return select('core/block-editor').getSettings();
 	}, []);
 
-	// Prepare color settings for PanelColorSettings
+	// Prepare color settings for PanelColorSettings (menu colors only when menu is enabled)
 	const colorSettings = [
 		{
 			label: __('Timeline Line Color', 'we-timeline'),
@@ -150,6 +154,30 @@ export default function Edit({ attributes, setAttributes }) {
 			value: dateColor || '',
 			onChange: (value) => setAttributes({ dateColor: value || '' }),
 		},
+		...(showMenu
+			? [
+					{
+						label: __('Menu Text Color', 'we-timeline'),
+						value: menuTextColor || '',
+						onChange: (value) => setAttributes({ menuTextColor: value || '' }),
+					},
+					{
+						label: __('Menu Text Color (Hover)', 'we-timeline'),
+						value: menuTextColorHover || '',
+						onChange: (value) => setAttributes({ menuTextColorHover: value || '' }),
+					},
+					{
+						label: __('Menu Background Color', 'we-timeline'),
+						value: menuBackgroundColor || '',
+						onChange: (value) => setAttributes({ menuBackgroundColor: value || '' }),
+					},
+					{
+						label: __('Menu Background Color (Hover)', 'we-timeline'),
+						value: menuHoverColor || '',
+						onChange: (value) => setAttributes({ menuHoverColor: value || '' }),
+					},
+			  ]
+			: []),
 	];
 
 	return (

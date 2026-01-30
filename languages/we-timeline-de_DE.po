@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WE Timeline\n"
 "Report-Msgid-Bugs-To: https://github.com/gbyat/we-timeline/issues\n"
-"POT-Creation-Date: 2026-01-27 21:44+0000\n"
+"POT-Creation-Date: 2026-01-30 14:14+0000\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: webentwicklerin <gabriele@webentwicklerin.at>\n"
@@ -73,11 +73,21 @@ msgstr "Datum"
 msgid "Date:"
 msgstr "Datum:"
 
-#: ../includes/class-renderer.php:64
+#: ../includes/class-renderer.php:69
 msgid "No timeline items found."
 msgstr ""
 
-#: ../includes/class-renderer.php:409
+#: ../includes/class-renderer.php:228
+msgid "Jump to timeline periods"
+msgstr ""
+
+#. translators: Suffix for decade labels. E.g. "s" → 1920s (English), "er" → 1920er (German).
+#: ../includes/class-renderer.php:348
+msgctxt "decade suffix"
+msgid "s"
+msgstr "er"
+
+#: ../includes/class-renderer.php:528
 msgid "Read more"
 msgstr "Beitrag lesen"
 
@@ -119,24 +129,24 @@ msgstr "Einstellungen speichern"
 msgid "Error: render.php not found."
 msgstr ""
 
-#: ../we-timeline.php:223
+#: ../we-timeline.php:232
 msgid "No changelog available."
 msgstr "Keine Changelog vorhanden"
 
-#: ../we-timeline.php:294
+#: ../we-timeline.php:303
 msgid "Installation"
 msgstr "Installation"
 
-#: ../we-timeline.php:296
+#: ../we-timeline.php:305
 msgid ""
 "Upload the plugin files to the /wp-content/plugins/we-timeline directory, or "
 "install the plugin through the WordPress plugins screen directly."
 msgstr ""
 
-#: ../we-timeline.php:297
+#: ../we-timeline.php:306
 msgid "Activate the plugin through the 'Plugins' screen in WordPress."
 msgstr "Aktivieren Sie das Plugin über den Bildschirm „Plugins“ in WordPress."
 
-#: ../we-timeline.php:298
+#: ../we-timeline.php:307
 msgid "Add the Timeline block to your pages or posts."
 msgstr ""

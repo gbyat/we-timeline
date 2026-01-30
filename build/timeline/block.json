@@ -109,6 +109,22 @@
     "dateColor": {
       "type": "string",
       "default": ""
+    },
+    "menuTextColor": {
+      "type": "string",
+      "default": ""
+    },
+    "menuTextColorHover": {
+      "type": "string",
+      "default": ""
+    },
+    "menuBackgroundColor": {
+      "type": "string",
+      "default": ""
+    },
+    "menuHoverColor": {
+      "type": "string",
+      "default": ""
     }
   },
   "editorScript": "file:./index.js",

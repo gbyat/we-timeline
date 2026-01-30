@@ -118,6 +118,15 @@ namespace Webentwicklerin\Timeline {
 
     // Initialize plugin.
     add_action('plugins_loaded', __NAMESPACE__ . '\\init');
+
+    // Rebuild exclusion cache on activation so existing timeline blocks are applied.
+    register_activation_hook(
+        WE_TIMELINE_PLUGIN_FILE,
+        function () {
+            $exclude = new Exclude();
+            $exclude->rebuild_exclusion_cache();
+        }
+    );
 }
 
 // GitHub Update System (in global namespace, after plugin initialization)
