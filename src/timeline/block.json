@@ -2,11 +2,11 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "we-timeline/timeline",
-	"title": "Timeline",
+	"title": "WE Timeline",
 	"category": "widgets",
 	"icon": "calendar-alt",
-	"description": "Display content in a timeline layout with various options.",
-	"keywords": [ "timeline", "history", "events" ],
+	"description": "Display posts or custom items in a WE Timeline layout with navigation.",
+	"keywords": [ "we timeline", "timeline", "history", "events", "chronik" ],
 	"textdomain": "we-timeline",
 	"supports": {
 		"align": [ "wide", "full" ],
@@ -23,6 +23,10 @@
 		}
 	},
 	"attributes": {
+		"contentSource": {
+			"type": "string",
+			"default": "posts"
+		},
 		"layout": {
 			"type": "string",
 			"default": "vertical"
@@ -71,6 +75,10 @@
 			"type": "boolean",
 			"default": false
 		},
+		"showItemDates": {
+			"type": "boolean",
+			"default": true
+		},
 		"showMenu": {
 			"type": "boolean",
 			"default": false
@@ -78,6 +86,50 @@
 		"menuGranularity": {
 			"type": "string",
 			"default": "auto"
+		},
+		"menuPosition": {
+			"type": "string",
+			"default": "sidebar"
+		},
+		"menuAlign": {
+			"type": "string",
+			"default": "left"
+		},
+		"menuStyle": {
+			"type": "string",
+			"default": "default"
+		},
+		"menuSeparators": {
+			"type": "string",
+			"default": "none"
+		},
+		"stickyHeaderSelector": {
+			"type": "string",
+			"default": ""
+		},
+		"itemBorderRadius": {
+			"type": "string",
+			"default": ""
+		},
+		"itemBorderWidth": {
+			"type": "string",
+			"default": ""
+		},
+		"itemBorderColor": {
+			"type": "string",
+			"default": ""
+		},
+		"itemBorderStyle": {
+			"type": "string",
+			"default": ""
+		},
+		"itemPadding": {
+			"type": "string",
+			"default": ""
+		},
+		"itemGap": {
+			"type": "string",
+			"default": ""
 		},
 		"timelineLineColor": {
 			"type": "string",
@@ -88,10 +140,6 @@
 			"default": ""
 		},
 		"itemBackgroundColor": {
-			"type": "string",
-			"default": ""
-		},
-		"itemBorderRadius": {
 			"type": "string",
 			"default": ""
 		},
@@ -116,6 +164,14 @@
 			"default": ""
 		},
 		"menuHoverColor": {
+			"type": "string",
+			"default": ""
+		},
+		"menuActiveColor": {
+			"type": "string",
+			"default": ""
+		},
+		"menuActiveBackgroundColor": {
 			"type": "string",
 			"default": ""
 		}

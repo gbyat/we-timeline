@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "we-timeline/timeline-item-title",
+  "title": "Timeline Navigation Title",
+  "category": "widgets",
+  "icon": "heading",
+  "description": "Item title. Used in the timeline menu when no date is set. Drag it into any column or group.",
+  "keywords": [
+    "we timeline",
+    "title",
+    "heading",
+    "navigation"
+  ],
+  "textdomain": "we-timeline",
+  "parent": [
+    "we-timeline/timeline-item"
+  ],
+  "attributes": {
+    "title": {
+      "type": "string",
+      "source": "html",
+      "selector": "h3",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "reusable": false,
+    "multiple": false
+  },
+  "editorScript": "file:./index.js"
+}

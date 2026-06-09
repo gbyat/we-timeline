@@ -18,4 +18,4 @@ if (! class_exists('\Webentwicklerin\Timeline\Renderer')) {
 	return '<p>' . esc_html__('Error: Renderer class not found.', 'we-timeline') . '</p>';
 }
 
-return \Webentwicklerin\Timeline\Renderer::render($attributes);
+return \Webentwicklerin\Timeline\Renderer::render($attributes, $block);

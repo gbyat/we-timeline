@@ -6,23 +6,73 @@
 
 import { __ } from '@wordpress/i18n';
 import { useEffect } from '@wordpress/element';
-import { 
-	useBlockProps, 
-	InspectorControls, 
+import {
+	useBlockProps,
+	InspectorControls,
 	BlockControls,
 	PanelColorSettings,
+	InnerBlocks,
+	useSetting,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	SelectControl,
 	ToggleControl,
-	__experimentalInputControl as InputControl,
+	TextControl,
+	Notice,
+	BaseControl,
+	ColorPalette,
+	__experimentalUnitControl as UnitControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import ServerSideRender from '@wordpress/server-side-render';
 
+const TIMELINE_ITEM_TEMPLATE = [
+	['we-timeline/timeline-item', { date: '', title: '' }],
+	['we-timeline/timeline-item', { date: '', title: '' }],
+];
+
+const ITEM_UNIT_CONTROL_PROPS = {
+	units: [
+		{ value: 'px', label: 'px', default: 0 },
+		{ value: 'rem', label: 'rem', default: 0 },
+		{ value: 'em', label: 'em', default: 0 },
+		{ value: '%', label: '%', default: 0 },
+	],
+	isResetValueOnUnitChange: true,
+};
+
+/**
+ * Build inline CSS custom properties for timeline items container (editor preview).
+ *
+ * @param {Object} attrs Block attributes.
+ * @return {Object} Style object.
+ */
+function buildTimelineItemsStyle(attrs) {
+	const style = {};
+	const lengthMap = {
+		itemBorderRadius: '--we-timeline-item-border-radius',
+		itemBorderWidth: '--we-timeline-item-border-width',
+		itemPadding: '--we-timeline-item-padding',
+		itemGap: '--we-timeline-items-gap',
+	};
+	Object.entries(lengthMap).forEach(([attr, prop]) => {
+		if (attrs[attr]) {
+			style[prop] = attrs[attr];
+		}
+	});
+	if (attrs.itemBorderColor) {
+		style['--we-timeline-item-border-color'] = attrs.itemBorderColor;
+	}
+	if (attrs.itemBorderStyle) {
+		style['--we-timeline-item-border-style'] = attrs.itemBorderStyle;
+	}
+	return style;
+}
+
 export default function Edit({ attributes, setAttributes }) {
 	const {
+		contentSource,
 		layout,
 		position,
 		visibleItems,
@@ -35,26 +85,46 @@ export default function Edit({ attributes, setAttributes }) {
 		sortOrder,
 		excludeFromMainLoop,
 		excludeFromCategoryLists,
+		showItemDates,
 		showMenu,
 		menuGranularity,
+		menuPosition,
+		menuAlign,
+		menuStyle,
+		menuSeparators,
+		stickyHeaderSelector,
+		itemBorderRadius,
+		itemBorderWidth,
+		itemBorderColor,
+		itemBorderStyle,
+		itemPadding,
+		itemGap,
 		timelineLineColor,
 		timelineLineActiveColor,
 		itemBackgroundColor,
-		itemBorderRadius,
 		iconColor,
 		dateColor,
 		menuTextColor,
 		menuTextColorHover,
 		menuBackgroundColor,
 		menuHoverColor,
+		menuActiveColor,
+		menuActiveBackgroundColor,
 	} = attributes;
 
-	// Ensure postType is always set in block attributes.
+	const isCompactMenu = (menuStyle || 'default') === 'compact';
+	const themeColors = useSetting('color.palette') || [];
+	const itemBorderStyleValue = itemBorderStyle || 'solid';
+	const showItemBorderWidth = itemBorderStyleValue !== 'none';
+
+	const isItemsMode = contentSource === 'items';
+
+	// Ensure postType is always set in block attributes (posts mode).
 	useEffect(() => {
-		if (!postType) {
+		if (!isItemsMode && !postType) {
 			setAttributes({ postType: 'post' });
 		}
-	}, [postType, setAttributes]);
+	}, [postType, setAttributes, isItemsMode]);
 
 	// Ensure position is set when layout is set.
 	useEffect(() => {
@@ -64,12 +134,15 @@ export default function Edit({ attributes, setAttributes }) {
 		}
 	}, [layout, position, setAttributes]);
 
+	const layoutClass = layout === 'horizontal-scroll'
+		? `we-timeline--horizontal-scroll-${position || 'top'}`
+		: `we-timeline--vertical-${position || 'left'}`;
+
 	const blockProps = useBlockProps({
-		className: 'we-timeline',
-		style: {
-			// Colors are handled by WordPress block supports via useBlockProps
-		},
+		className: `we-timeline wp-block-we-timeline-timeline ${isItemsMode ? layoutClass : ''}`,
 	});
+
+	const timelineItemsStyle = buildTimelineItemsStyle(attributes);
 
 	// Get post types.
 	const postTypes = useSelect((select) => {
@@ -122,13 +195,7 @@ export default function Edit({ attributes, setAttributes }) {
 		[taxonomy]
 	);
 
-	// Get block editor settings for color palette
-	const settings = useSelect((select) => {
-		return select('core/block-editor').getSettings();
-	}, []);
-
-	// Prepare color settings for PanelColorSettings (menu colors only when menu is enabled)
-	const colorSettings = [
+	const timelineColorSettings = [
 		{
 			label: __('Timeline Line Color', 'we-timeline'),
 			value: timelineLineColor || '',
@@ -149,36 +216,67 @@ export default function Edit({ attributes, setAttributes }) {
 			value: iconColor || '',
 			onChange: (value) => setAttributes({ iconColor: value || '' }),
 		},
-		{
-			label: __('Date Color', 'we-timeline'),
-			value: dateColor || '',
-			onChange: (value) => setAttributes({ dateColor: value || '' }),
-		},
-		...(showMenu
+		...(showItemDates !== false
 			? [
 					{
-						label: __('Menu Text Color', 'we-timeline'),
-						value: menuTextColor || '',
-						onChange: (value) => setAttributes({ menuTextColor: value || '' }),
-					},
-					{
-						label: __('Menu Text Color (Hover)', 'we-timeline'),
-						value: menuTextColorHover || '',
-						onChange: (value) => setAttributes({ menuTextColorHover: value || '' }),
-					},
-					{
-						label: __('Menu Background Color', 'we-timeline'),
-						value: menuBackgroundColor || '',
-						onChange: (value) => setAttributes({ menuBackgroundColor: value || '' }),
-					},
-					{
-						label: __('Menu Background Color (Hover)', 'we-timeline'),
-						value: menuHoverColor || '',
-						onChange: (value) => setAttributes({ menuHoverColor: value || '' }),
+						label: __('Date Color', 'we-timeline'),
+						value: dateColor || '',
+						onChange: (value) => setAttributes({ dateColor: value || '' }),
 					},
 			  ]
 			: []),
 	];
+
+	const menuColorSettings = isCompactMenu
+		? [
+				{
+					label: __('Link Color', 'we-timeline'),
+					value: menuTextColor || '',
+					onChange: (value) => setAttributes({ menuTextColor: value || '' }),
+				},
+				{
+					label: __('Link Color (Hover)', 'we-timeline'),
+					value: menuTextColorHover || '',
+					onChange: (value) => setAttributes({ menuTextColorHover: value || '' }),
+				},
+				{
+					label: __('Link Color (Active)', 'we-timeline'),
+					value: menuActiveColor || '',
+					onChange: (value) => setAttributes({ menuActiveColor: value || '' }),
+				},
+		  ]
+		: [
+				{
+					label: __('Menu Text Color', 'we-timeline'),
+					value: menuTextColor || '',
+					onChange: (value) => setAttributes({ menuTextColor: value || '' }),
+				},
+				{
+					label: __('Menu Text Color (Hover)', 'we-timeline'),
+					value: menuTextColorHover || '',
+					onChange: (value) => setAttributes({ menuTextColorHover: value || '' }),
+				},
+				{
+					label: __('Menu Background Color', 'we-timeline'),
+					value: menuBackgroundColor || '',
+					onChange: (value) => setAttributes({ menuBackgroundColor: value || '' }),
+				},
+				{
+					label: __('Menu Background Color (Hover)', 'we-timeline'),
+					value: menuHoverColor || '',
+					onChange: (value) => setAttributes({ menuHoverColor: value || '' }),
+				},
+				{
+					label: __('Menu Text Color (Active)', 'we-timeline'),
+					value: menuActiveColor || '',
+					onChange: (value) => setAttributes({ menuActiveColor: value || '' }),
+				},
+				{
+					label: __('Menu Background Color (Active)', 'we-timeline'),
+					value: menuActiveBackgroundColor || '',
+					onChange: (value) => setAttributes({ menuActiveBackgroundColor: value || '' }),
+				},
+		  ];
 
 	return (
 		<>
@@ -187,22 +285,83 @@ export default function Edit({ attributes, setAttributes }) {
 				{PanelColorSettings && (
 					<PanelColorSettings
 						title={__('Timeline Colors', 'we-timeline')}
-						colorSettings={colorSettings}
+						colorSettings={timelineColorSettings}
+					/>
+				)}
+				{showMenu && PanelColorSettings && (
+					<PanelColorSettings
+						title={__('Menu Colors', 'we-timeline')}
+						colorSettings={menuColorSettings}
 					/>
 				)}
 				<PanelBody title={__('Timeline Styling', 'we-timeline')} initialOpen={false}>
-					<InputControl
-						label={__('Item Border Radius', 'we-timeline')}
-						type="text"
+					<UnitControl
+						label={__('Item border radius', 'we-timeline')}
 						value={itemBorderRadius || ''}
 						onChange={(value) => setAttributes({ itemBorderRadius: value || '' })}
-						placeholder="e.g., 8px, 0.5rem, 0"
-						help={__('Enter a CSS value (e.g., 8px, 0.5rem, 0)', 'we-timeline')}
+						{...ITEM_UNIT_CONTROL_PROPS}
+					/>
+					<SelectControl
+						label={__('Item border style', 'we-timeline')}
+						value={itemBorderStyleValue}
+						options={[
+							{ label: __('Solid', 'we-timeline'), value: 'solid' },
+							{ label: __('Dashed', 'we-timeline'), value: 'dashed' },
+							{ label: __('Dotted', 'we-timeline'), value: 'dotted' },
+							{ label: __('None', 'we-timeline'), value: 'none' },
+						]}
+						onChange={(value) => setAttributes({ itemBorderStyle: value === 'solid' ? '' : value })}
+						help={__('Default is solid.', 'we-timeline')}
+					/>
+					{showItemBorderWidth && (
+						<UnitControl
+							label={__('Item border width', 'we-timeline')}
+							value={itemBorderWidth || ''}
+							onChange={(value) => setAttributes({ itemBorderWidth: value || '' })}
+							{...ITEM_UNIT_CONTROL_PROPS}
+						/>
+					)}
+					{showItemBorderWidth && (
+						<BaseControl
+							id="we-timeline-item-border-color"
+							label={__('Item border color', 'we-timeline')}
+						>
+							<ColorPalette
+								colors={themeColors}
+								value={itemBorderColor || ''}
+								onChange={(value) => setAttributes({ itemBorderColor: value || '' })}
+								clearable
+							/>
+						</BaseControl>
+					)}
+					<UnitControl
+						label={__('Item padding', 'we-timeline')}
+						value={itemPadding || ''}
+						onChange={(value) => setAttributes({ itemPadding: value || '' })}
+						{...ITEM_UNIT_CONTROL_PROPS}
+					/>
+					<UnitControl
+						label={__('Item spacing', 'we-timeline')}
+						value={itemGap || ''}
+						onChange={(value) => setAttributes({ itemGap: value || '' })}
+						{...ITEM_UNIT_CONTROL_PROPS}
+						help={__('Vertical gap between timeline items.', 'we-timeline')}
 					/>
 				</PanelBody>
 			</InspectorControls>
 			<InspectorControls>
 				<PanelBody title={__('Content Settings', 'we-timeline')} initialOpen={true}>
+					<SelectControl
+						label={__('Content source', 'we-timeline')}
+						value={contentSource || 'posts'}
+						options={[
+							{ label: __('Posts', 'we-timeline'), value: 'posts' },
+							{ label: __('Custom items', 'we-timeline'), value: 'items' },
+						]}
+						onChange={(value) => setAttributes({ contentSource: value })}
+						help={__('Switching source does not migrate content between modes.', 'we-timeline')}
+					/>
+
 					<SelectControl
 						label={__('Layout', 'we-timeline')}
 						value={layout || 'vertical'}
@@ -211,7 +370,6 @@ export default function Edit({ attributes, setAttributes }) {
 							{ label: __('Horizontal Scroll', 'we-timeline'), value: 'horizontal-scroll' },
 						]}
 						onChange={(value) => {
-							// Reset position to default when layout changes
 							const defaultPosition = value === 'vertical' ? 'left' : 'top';
 							setAttributes({ layout: value, position: defaultPosition });
 						}}
@@ -284,51 +442,55 @@ export default function Edit({ attributes, setAttributes }) {
 						/>
 					)}
 
-					<SelectControl
-						label={__('Post Type', 'we-timeline')}
-						value={postType || 'post'}
-						options={postTypes.length > 0 ? postTypes : [{ label: __('Loading...', 'we-timeline'), value: 'post' }]}
-						onChange={(value) => {
-							setAttributes({ postType: value, taxonomy: '', term: 0 });
-						}}
-					/>
-
-					{(postType || 'post') && (
+					{!isItemsMode && (
 						<>
 							<SelectControl
-								label={__('Taxonomy', 'we-timeline')}
-								value={taxonomy}
-								options={[
-									{ label: __('All Posts', 'we-timeline'), value: '' },
-									...taxonomies,
-								]}
+								label={__('Post Type', 'we-timeline')}
+								value={postType || 'post'}
+								options={postTypes.length > 0 ? postTypes : [{ label: __('Loading...', 'we-timeline'), value: 'post' }]}
 								onChange={(value) => {
-									setAttributes({ taxonomy: value, term: 0 });
+									setAttributes({ postType: value, taxonomy: '', term: 0 });
 								}}
 							/>
-							{taxonomy && (
-								<SelectControl
-									label={__('Term', 'we-timeline')}
-									value={term}
-									options={[
-										{ label: __('All Terms', 'we-timeline'), value: 0 },
-										...terms,
-									]}
-									onChange={(value) => setAttributes({ term: parseInt(value) })}
-								/>
+
+							{(postType || 'post') && (
+								<>
+									<SelectControl
+										label={__('Taxonomy', 'we-timeline')}
+										value={taxonomy}
+										options={[
+											{ label: __('All Posts', 'we-timeline'), value: '' },
+											...taxonomies,
+										]}
+										onChange={(value) => {
+											setAttributes({ taxonomy: value, term: 0 });
+										}}
+									/>
+									{taxonomy && (
+										<SelectControl
+											label={__('Term', 'we-timeline')}
+											value={term}
+											options={[
+												{ label: __('All Terms', 'we-timeline'), value: 0 },
+												...terms,
+											]}
+											onChange={(value) => setAttributes({ term: parseInt(value) })}
+										/>
+									)}
+								</>
 							)}
+
+							<SelectControl
+								label={__('Date Field', 'we-timeline')}
+								value={dateField}
+								options={[
+									{ label: __('Post Date', 'we-timeline'), value: 'date' },
+									{ label: __('Timeline Date (Custom Field)', 'we-timeline'), value: 'timeline_date' },
+								]}
+								onChange={(value) => setAttributes({ dateField: value })}
+							/>
 						</>
 					)}
-
-					<SelectControl
-						label={__('Date Field', 'we-timeline')}
-						value={dateField}
-						options={[
-							{ label: __('Post Date', 'we-timeline'), value: 'date' },
-							{ label: __('Timeline Date (Custom Field)', 'we-timeline'), value: 'timeline_date' },
-						]}
-						onChange={(value) => setAttributes({ dateField: value })}
-					/>
 
 					<SelectControl
 						label={__('Sort Order', 'we-timeline')}
@@ -341,57 +503,147 @@ export default function Edit({ attributes, setAttributes }) {
 					/>
 				</PanelBody>
 
-				<PanelBody title={__('Exclusion Settings', 'we-timeline')}>
-					{taxonomy && term > 0 && (
-						<>
-							<ToggleControl
-								label={__('Exclude from Main Loop', 'we-timeline')}
-								checked={excludeFromMainLoop}
-								onChange={(value) => setAttributes({ excludeFromMainLoop: value })}
-							/>
-							<ToggleControl
-								label={__('Exclude from Category Lists', 'we-timeline')}
-								checked={excludeFromCategoryLists}
-								onChange={(value) => setAttributes({ excludeFromCategoryLists: value })}
-							/>
-						</>
-					)}
-				</PanelBody>
+				{!isItemsMode && (
+					<PanelBody title={__('Exclusion Settings', 'we-timeline')}>
+						{taxonomy && term > 0 ? (
+							<>
+								<ToggleControl
+									label={__('Exclude from Main Loop', 'we-timeline')}
+									checked={excludeFromMainLoop}
+									onChange={(value) => setAttributes({ excludeFromMainLoop: value })}
+								/>
+								<ToggleControl
+									label={__('Exclude from Category Lists', 'we-timeline')}
+									checked={excludeFromCategoryLists}
+									onChange={(value) => setAttributes({ excludeFromCategoryLists: value })}
+								/>
+							</>
+						) : (
+							<p>{__('Select a taxonomy and term to configure exclusion.', 'we-timeline')}</p>
+						)}
+					</PanelBody>
+				)}
 
 				<PanelBody title={__('Menu Settings', 'we-timeline')}>
+					<ToggleControl
+						label={__('Show dates on items', 'we-timeline')}
+						checked={showItemDates !== false}
+						onChange={(value) => setAttributes({ showItemDates: value })}
+						help={__(
+							'When off, dates stay in item settings for sorting and menu navigation but are not shown on the frontend.',
+							'we-timeline'
+						)}
+					/>
 					<ToggleControl
 						label={__('Show Menu', 'we-timeline')}
 						checked={showMenu}
 						onChange={(value) => setAttributes({ showMenu: value })}
 					/>
 					{showMenu && (
-						<SelectControl
-							label={__('Menu Granularity', 'we-timeline')}
-							value={menuGranularity || 'auto'}
-							options={[
-								{ label: __('Auto', 'we-timeline'), value: 'auto' },
-								{ label: __('Decades', 'we-timeline'), value: 'decades' },
-								{ label: __('Years', 'we-timeline'), value: 'years' },
-								{ label: __('Months', 'we-timeline'), value: 'months' },
-								{ label: __('Items', 'we-timeline'), value: 'items' },
-							]}
-							onChange={(value) => setAttributes({ menuGranularity: value })}
-						/>
+						<>
+							<SelectControl
+								label={__('Menu position', 'we-timeline')}
+								value={menuPosition || 'sidebar'}
+								options={[
+									{ label: __('Sidebar (fixed right)', 'we-timeline'), value: 'sidebar' },
+									{ label: __('Top (sticky above timeline)', 'we-timeline'), value: 'top' },
+								]}
+								onChange={(value) => setAttributes({ menuPosition: value })}
+							/>
+							{(menuPosition || 'sidebar') === 'top' && (
+								<SelectControl
+									label={__('Menu alignment', 'we-timeline')}
+									value={menuAlign || 'left'}
+									options={[
+										{ label: __('Left', 'we-timeline'), value: 'left' },
+										{ label: __('Center', 'we-timeline'), value: 'center' },
+										{ label: __('Right', 'we-timeline'), value: 'right' },
+									]}
+									onChange={(value) => setAttributes({ menuAlign: value })}
+								/>
+							)}
+							<SelectControl
+								label={__('Menu style', 'we-timeline')}
+								value={menuStyle || 'default'}
+								options={[
+									{ label: __('Default', 'we-timeline'), value: 'default' },
+									{ label: __('Compact (text links)', 'we-timeline'), value: 'compact' },
+								]}
+								onChange={(value) => setAttributes({ menuStyle: value })}
+							/>
+							<SelectControl
+								label={__('Separators', 'we-timeline')}
+								value={menuSeparators || 'none'}
+								disabled={!isCompactMenu}
+								options={[
+									{ label: __('None', 'we-timeline'), value: 'none' },
+									{ label: __('Pipe (|)', 'we-timeline'), value: 'pipe' },
+									{ label: __('Middot (·)', 'we-timeline'), value: 'middot' },
+									{ label: __('Hyphen (-)', 'we-timeline'), value: 'hyphen' },
+								]}
+								onChange={(value) => setAttributes({ menuSeparators: value })}
+								help={
+									isCompactMenu
+										? __('Shown between compact menu links only.', 'we-timeline')
+										: __('Only applies when menu style is compact.', 'we-timeline')
+								}
+							/>
+							<SelectControl
+								label={__('Menu Granularity', 'we-timeline')}
+								value={menuGranularity || 'auto'}
+								options={[
+									{ label: __('Auto', 'we-timeline'), value: 'auto' },
+									{ label: __('Decades', 'we-timeline'), value: 'decades' },
+									{ label: __('Years', 'we-timeline'), value: 'years' },
+									{ label: __('Months', 'we-timeline'), value: 'months' },
+									{ label: __('Items', 'we-timeline'), value: 'items' },
+								]}
+								onChange={(value) => setAttributes({ menuGranularity: value })}
+							/>
+							<TextControl
+								label={__('Sticky header selector', 'we-timeline')}
+								help={__(
+									'CSS selector for your theme’s fixed or sticky header (e.g. header.site-header, #masthead). Height is measured live while scrolling.',
+									'we-timeline'
+								)}
+								value={stickyHeaderSelector || ''}
+								onChange={(value) => setAttributes({ stickyHeaderSelector: value })}
+							/>
+						</>
 					)}
 				</PanelBody>
 			</InspectorControls>
 
 			<div {...blockProps}>
-				<ServerSideRender
-					block="we-timeline/timeline"
-					attributes={{
-						...attributes,
-						postType: postType || 'post',
-						layout: layout || 'vertical',
-						position: position || (layout === 'horizontal-scroll' ? 'top' : 'left'),
-						visibleItems: visibleItems || 3,
-					}}
-				/>
+				{isItemsMode ? (
+					<>
+						{showMenu && (
+							<Notice status="info" isDismissible={false}>
+								{__('Timeline menu preview is available on the frontend.', 'we-timeline')}
+							</Notice>
+						)}
+						<div className="we-timeline__items" style={timelineItemsStyle}>
+							<InnerBlocks
+								allowedBlocks={['we-timeline/timeline-item']}
+								template={TIMELINE_ITEM_TEMPLATE}
+								templateLock={false}
+								renderAppender={InnerBlocks.ButtonBlockAppender}
+							/>
+						</div>
+					</>
+				) : (
+					<ServerSideRender
+						block="we-timeline/timeline"
+						attributes={{
+							...attributes,
+							contentSource: 'posts',
+							postType: postType || 'post',
+							layout: layout || 'vertical',
+							position: position || (layout === 'horizontal-scroll' ? 'top' : 'left'),
+							visibleItems: visibleItems || 3,
+						}}
+					/>
+				)}
 			</div>
 		</>
 	);

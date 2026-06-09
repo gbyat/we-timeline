@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "we-timeline/timeline-item",
+  "title": "WE Timeline Item",
+  "category": "widgets",
+  "icon": "calendar",
+  "description": "A single entry in a WE Timeline (custom items mode).",
+  "keywords": [
+    "we timeline",
+    "timeline",
+    "item",
+    "event"
+  ],
+  "textdomain": "we-timeline",
+  "parent": [
+    "we-timeline/timeline"
+  ],
+  "attributes": {
+    "date": {
+      "type": "string",
+      "default": ""
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "imageId": {
+      "type": "number",
+      "default": 0
+    },
+    "excerpt": {
+      "type": "string",
+      "default": ""
+    },
+    "link": {
+      "type": "string",
+      "default": ""
+    },
+    "anchor": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "reusable": false,
+    "anchor": true
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:../timeline/index.css"
+}

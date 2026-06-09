@@ -5,69 +5,93 @@
  */
 
 .wp-block-we-timeline-timeline {
-    // Default colors (fallback if no WordPress colors are set)
-    --we-timeline-primary: #0073aa;
-    --we-timeline-secondary: #005177;
-    --we-timeline-background: #ffffff;
-    --we-timeline-text: #333333;
-    --we-timeline-accent: #00a0d2;
-    --we-timeline-border: #cccccc;
-    --we-timeline-line-color: #e0e0e0;
-    --we-timeline-line-active-color: #0073aa;
-    --we-timeline-item-background: transparent;
-    --we-timeline-item-border-radius: 0;
-    --we-timeline-item-shadow: none;
+    border: none;
+    box-shadow: none;
 
-    // Use native WordPress background color if set
-    // WordPress adds background-color as inline style or CSS variable
+    // Theme-driven defaults (block editor color panel / theme.json palette)
+    --we-timeline-primary: var(--wp--preset--color--primary, var(--wp--custom--color--primary, var(--wp--preset--color--link, #0073aa)));
+    --we-timeline-background: var(--wp--preset--color--background, var(--wp--custom--color--background, #ffffff));
+    --we-timeline-text: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333));
+    --we-timeline-border: color-mix(in srgb, var(--we-timeline-text) 20%, transparent);
+    --we-timeline-line-color: color-mix(in srgb, var(--we-timeline-text) 18%, transparent);
+    --we-timeline-line-active-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+    --we-timeline-icon-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+    --we-timeline-date-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+    --we-timeline-item-background: var(--wp--preset--color--background, var(--wp--custom--color--background, transparent));
+    --we-timeline-item-border-radius: 8px;
+    --we-timeline-item-border-width: 1px;
+    --we-timeline-item-border-style: solid;
+    --we-timeline-item-border-color: var(--we-timeline-border);
+    --we-timeline-item-padding: 1.5rem;
+    --we-timeline-items-gap: 2rem;
+    --we-timeline-item-shadow: none;
+    --we-timeline-menu-text-color: var(--we-timeline-text);
+    --we-timeline-menu-background-color: var(--we-timeline-background);
+    --we-timeline-menu-text-color-hover: var(--we-timeline-background);
+    --we-timeline-menu-hover-color: var(--we-timeline-line-active-color);
+    --we-timeline-menu-active-color: var(--we-timeline-line-active-color);
+    --we-timeline-menu-active-background-color: transparent;
+    // Menu scroll anchor: heading lands below sticky header (+ optional gap).
+    --we-timeline-nav-anchor-min: 0px;
+    --we-timeline-nav-anchor-offset: 0.5rem;
+    // Fallback only when no sticky header selector is set on the block.
+    --we-timeline-sticky-header-offset: 0px;
+    --we-timeline-sticky-menu-top: 0px;
+
     &.has-background {
         --we-timeline-background: var(--wp--preset--color--background, var(--wp--custom--color--background, #ffffff));
+        --we-timeline-item-background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+        --we-timeline-menu-background-color: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
 
-        // Apply background color to items (can be overridden by item-specific background)
         .we-timeline__item {
-            background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
+            background: var(--we-timeline-item-background);
         }
     }
 
-    // Use native WordPress text color if set
-    // WordPress adds color as inline style or CSS variable
     &.has-text-color {
-        --we-timeline-text: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333));
-        color: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333));
+        --we-timeline-text: var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, currentColor));
+        --we-timeline-menu-text-color: var(--we-timeline-text);
+        color: var(--we-timeline-text);
 
-        // Apply text color to all text elements
         .we-timeline__item {
-
             &-title,
-            &-excerpt {
+            &-excerpt,
+            &-extra {
                 color: inherit;
             }
-
-            &-title a {
-                color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333333))));
-            }
         }
     }
 
-    // Use native WordPress link color if set
     &.has-link-color {
         --we-timeline-primary: var(--wp--preset--color--link, var(--wp--custom--color--link, #0073aa));
+        --we-timeline-line-active-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+        --we-timeline-icon-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+        --we-timeline-date-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+        --we-timeline-menu-hover-color: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
+    }
+
+    &.has-text-color.has-background {
+        --we-timeline-menu-text-color-hover: var(--we-timeline-background);
     }
 
     .we-timeline {
         &__items {
             display: flex;
             flex-direction: column;
-            gap: 2rem;
+            gap: var(--we-timeline-items-gap, 2rem);
             position: relative;
+            border: none;
+            box-shadow: none;
         }
 
         &__item {
             position: relative;
-            padding: 1.5rem;
+            padding: var(--we-timeline-item-padding, 1.5rem);
             // Use WordPress background color if set, otherwise fallback
             background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
-            border: 1px solid var(--we-timeline-border);
+            border-width: var(--we-timeline-item-border-width, 1px);
+            border-style: var(--we-timeline-item-border-style, solid);
+            border-color: var(--we-timeline-item-border-color, var(--we-timeline-border));
             border-radius: var(--we-timeline-item-border-radius, 8px);
             box-shadow: var(--we-timeline-item-shadow, 0 2px 8px rgba(0, 0, 0, 0.1));
             transition: box-shadow 0.2s, opacity 0.2s;
@@ -1196,44 +1220,25 @@
     position: relative;
 
     .we-timeline-menu {
-        position: fixed;
-        right: 2rem;
-        top: 50%;
-        transform: translateY(-50%);
         z-index: 100;
         background: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
-        padding: 1rem;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        max-width: 200px;
-        max-height: 80vh;
-        overflow-y: auto;
 
         &__items {
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
             list-style: none;
             margin: 0;
             padding: 0;
         }
 
         &__item {
-            padding: 0.5rem 1rem;
             background: var(--we-timeline-menu-background-color, transparent);
             border: none;
-            border-left: 2px solid transparent;
             color: var(--we-timeline-menu-text-color, var(--we-timeline-text, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333))));
             cursor: pointer;
-            transition: all 0.2s;
-            text-align: left;
+            transition: color 0.2s, background 0.2s, border-color 0.2s;
             font-size: 0.9rem;
-
-            &:hover {
-                background: var(--we-timeline-menu-hover-color, var(--we-timeline-line-color, var(--we-timeline-border)));
-                border-left-color: var(--we-timeline-menu-hover-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary))));
-                color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-background, #{unquote('var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))')}));
-            }
+            font-family: inherit;
+            line-height: 1.4;
 
             &:focus {
                 outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
@@ -1248,32 +1253,268 @@
                 outline: 2px solid var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
                 outline-offset: 2px;
             }
+        }
 
-            // Active state
-            &.is-active {
-                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
-                border-left-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
-                color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-background, #{unquote('var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))')}));
-                font-weight: 600;
+        // Default style: pill buttons with left accent border
+        &:not(.we-timeline-menu--compact) {
+            .we-timeline-menu__item {
+                padding: 0.5rem 1rem;
+                border-left: 2px solid transparent;
+                text-align: left;
+
+                &:hover {
+                    background: var(--we-timeline-menu-hover-color, var(--we-timeline-line-color, var(--we-timeline-border)));
+                    border-left-color: var(--we-timeline-menu-hover-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary))));
+                    color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-background, #{unquote('var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))')}));
+                }
+
+                &.is-active {
+                    background: var(--we-timeline-menu-active-background-color, var(--we-timeline-menu-background-color, transparent));
+                    border-left-color: var(--we-timeline-menu-hover-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary))));
+                    color: var(--we-timeline-menu-active-color, var(--we-timeline-menu-text-color, var(--we-timeline-text, var(--wp--preset--color--foreground, var(--wp--custom--color--foreground, #333)))));
+                    font-weight: 600;
+                }
+            }
+        }
+
+        // Sidebar: fixed right, vertical list (desktop)
+        &--sidebar {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-width: 200px;
+            max-height: 80vh;
+            overflow-y: auto;
+
+            .we-timeline-menu__items {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        // Top: sticky above timeline, horizontal wrap (desktop)
+        &--top {
+            position: sticky;
+            top: var(--we-timeline-sticky-menu-top, 0);
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 2rem;
+            padding: 0.75rem 0;
+            box-shadow: none;
+            transform: none;
+            right: auto;
+            overflow: visible;
+
+            .we-timeline-menu__items {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.25rem 0.5rem;
+            }
+
+            &:not(.we-timeline-menu--compact) {
+                &.we-timeline-menu--align-left .we-timeline-menu__items {
+                    justify-content: flex-start;
+                }
+
+                &.we-timeline-menu--align-center .we-timeline-menu__items {
+                    justify-content: center;
+                }
+
+                &.we-timeline-menu--align-right .we-timeline-menu__items {
+                    justify-content: flex-end;
+                }
+            }
+
+            // Compact + top: inline flow so separators and text-align work (not flex wrap).
+            &.we-timeline-menu--compact {
+                padding: 0.5rem 0;
+
+                .we-timeline-menu__items {
+                    display: block;
+                    gap: 0;
+                }
+
+                &.we-timeline-menu--align-left .we-timeline-menu__items {
+                    text-align: left;
+                }
+
+                &.we-timeline-menu--align-center .we-timeline-menu__items {
+                    text-align: center;
+                }
+
+                &.we-timeline-menu--align-right .we-timeline-menu__items {
+                    text-align: right;
+                }
+
+                .we-timeline-menu__item,
+                .we-timeline-menu__separator {
+                    display: inline;
+                    width: auto;
+                }
+            }
+        }
+
+        // Compact: simple text links
+        &--compact {
+            box-shadow: none;
+            padding: 0.5rem 0;
+
+            .we-timeline-menu__item {
+                padding: 0.15rem 0;
+                border-left: none;
+                background: transparent;
+                font-size: 0.875rem;
+                text-decoration: none;
+
+                &:hover {
+                    background: transparent;
+                    color: var(--we-timeline-menu-text-color-hover, var(--we-timeline-menu-hover-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)))));
+                    text-decoration: underline;
+                }
+
+                &.is-active {
+                    background: transparent;
+                    color: var(--we-timeline-menu-active-color, var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary))));
+                    font-weight: 600;
+                    text-decoration: underline;
+                }
+            }
+        }
+
+        &__separator {
+            display: inline;
+            color: var(--we-timeline-menu-text-color, var(--we-timeline-text));
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: inherit;
+            padding: 0 0.35em;
+            opacity: 0.65;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        // Compact + sidebar: minimal vertical list without card chrome
+        &--sidebar.we-timeline-menu--compact {
+            padding: 0.5rem 0;
+            max-width: none;
+            background: transparent;
+            box-shadow: none;
+
+            .we-timeline-menu__items {
+                gap: 0.25rem;
             }
         }
     }
 }
 
-// Responsive: On smaller screens, position menu at top
+// Scroll target for timeline menu (heading or date — not the full item container).
+.we-timeline__nav-target {
+    scroll-margin-top: var(--we-timeline-nav-anchor-min, 0px);
+    scroll-margin-bottom: 1rem;
+}
+
+// Custom items: free inner layout (title, columns, etc. inside InnerBlocks)
+.we-timeline__item-content--free {
+    display: block;
+
+    .we-timeline__item-thumbnail {
+        margin-bottom: 1rem;
+    }
+
+    .we-timeline__item-inner {
+        > .we-timeline__item-title {
+            margin-top: 0;
+        }
+    }
+}
+
+// Editor: timeline item block
+.we-timeline__item--editor {
+    margin-bottom: 1.5rem;
+
+    .we-timeline__item-date-field {
+        margin-bottom: 0.5rem;
+    }
+
+    .we-timeline__item-thumbnail-button {
+        display: block;
+        width: 100%;
+        max-width: 200px;
+        padding: 0;
+        border: none;
+        background: none;
+        cursor: pointer;
+
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+    }
+
+    .we-timeline__item-image-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .we-timeline__item-extra {
+        margin-top: 0.75rem;
+    }
+}
+
+// Responsive: sidebar becomes sticky top bar on small screens
 @media (max-width: 768px) {
     .wp-block-we-timeline-timeline {
         .we-timeline-menu {
-            position: sticky;
-            top: 0;
-            right: auto;
-            transform: none;
-            max-width: 100%;
-            margin-bottom: 2rem;
+            z-index: 50;
 
-            &__items {
-                flex-direction: row;
-                flex-wrap: wrap;
+            &--sidebar {
+                position: sticky;
+                top: var(--we-timeline-sticky-menu-top, 0);
+                right: auto;
+                transform: none;
+                max-width: 100%;
+                width: 100%;
+                margin-bottom: 2rem;
+                max-height: none;
+                overflow: visible;
+
+                &:not(.we-timeline-menu--compact) {
+                    .we-timeline-menu__items {
+                        flex-direction: row;
+                        flex-wrap: wrap;
+                        gap: 0.25rem 0.5rem;
+                    }
+
+                    padding: 0.75rem 0;
+                    box-shadow: none;
+                    background: transparent;
+                }
+
+                &.we-timeline-menu--compact {
+                    .we-timeline-menu__items {
+                        display: block;
+                        gap: 0;
+                        text-align: left;
+                    }
+
+                    .we-timeline-menu__item,
+                    .we-timeline-menu__separator {
+                        display: inline;
+                        width: auto;
+                    }
+                }
+            }
+
+            &--top {
+                z-index: 50;
             }
         }
     }

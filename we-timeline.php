@@ -9,6 +9,7 @@
  * Author URI: https://webentwicklerin.at
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Testet up to: 7.0
  * Text Domain: we-timeline
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -114,6 +115,16 @@ namespace Webentwicklerin\Timeline {
                 },
             )
         );
+
+        $item_block_path = WE_TIMELINE_PLUGIN_DIR . 'build/timeline-item';
+        if (file_exists($item_block_path . '/block.json')) {
+            register_block_type($item_block_path);
+        }
+
+        $item_title_block_path = WE_TIMELINE_PLUGIN_DIR . 'build/timeline-item-title';
+        if (file_exists($item_title_block_path . '/block.json')) {
+            register_block_type($item_title_block_path);
+        }
     }
 
     // Initialize plugin.
