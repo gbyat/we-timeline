@@ -168,6 +168,24 @@ import './timeline-progress.js';
     }
 
     /**
+     * Calendar year from a timeline date string, or null when invalid.
+     *
+     * @param {string} dateStr Raw date value.
+     * @return {number|null}
+     */
+    function getTimelineYearFromDate(dateStr) {
+        const timestamp = parseTimelineDate(dateStr);
+        if (Number.isNaN(timestamp)) {
+            return null;
+        }
+        const year = new Date(timestamp).getFullYear();
+        if (year < 1000 || year > 9999) {
+            return null;
+        }
+        return year;
+    }
+
+    /**
      * Build menu items from timeline items.
      */
     function buildMenuItems(timelineItems, granularity, decadeSuffix = 's') {
@@ -179,13 +197,15 @@ import './timeline-progress.js';
             const id = item.dataset.id;
             const title = getItemNavigationTitle(item);
             const timestamp = parseTimelineDate(date);
+            const year = date ? getTimelineYearFromDate(date) : null;
 
             return {
                 id,
                 date,
                 title: title || id,
                 timestamp: Number.isNaN(timestamp) ? null : timestamp,
-                hasDate: Boolean(date),
+                year,
+                hasDate: year !== null,
             };
         });
 
@@ -274,21 +294,20 @@ import './timeline-progress.js';
         const groups = {};
 
         items.forEach((item) => {
-            if (!item.hasDate || !item.date) {
-                return;
-            }
-            const date = new Date(item.date);
-            if (Number.isNaN(date.getTime())) {
+            if (!item.hasDate || item.year === null) {
                 return;
             }
             let key;
 
             if (granularity === 'decades') {
-                const year = date.getFullYear();
-                key = Math.floor(year / 10) * 10; // e.g., 1924 -> 1920
+                key = Math.floor(item.year / 10) * 10;
             } else if (granularity === 'years') {
-                key = date.getFullYear();
+                key = item.year;
             } else if (granularity === 'months') {
+                const date = new Date(item.date);
+                if (Number.isNaN(date.getTime())) {
+                    return;
+                }
                 key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             }
 
@@ -708,26 +727,28 @@ import './timeline-progress.js';
             
             // If not found, try to find by date/group
             if (!activeMenuItem && itemDate) {
-                const itemDateObj = new Date(itemDate);
-                const itemYear = itemDateObj.getFullYear();
-                const itemMonth = itemDateObj.getMonth() + 1;
-                const itemDecade = Math.floor(itemYear / 10) * 10;
-                
-                // Check each menu item to see if it matches
-                menuItems.forEach((menuItem) => {
-                    const menuType = menuItem.dataset.type;
-                    const menuValue = menuItem.dataset.value;
-                    
-                    if (menuType === 'item' && menuValue === itemId) {
-                        activeMenuItem = menuItem;
-                    } else if (menuType === 'year' && parseInt(menuValue) === itemYear) {
-                        activeMenuItem = menuItem;
-                    } else if (menuType === 'month' && menuValue === `${itemYear}-${String(itemMonth).padStart(2, '0')}`) {
-                        activeMenuItem = menuItem;
-                    } else if (menuType === 'decade' && parseInt(menuValue) === itemDecade) {
-                        activeMenuItem = menuItem;
-                    }
-                });
+                const itemYear = getTimelineYearFromDate(itemDate);
+                if (itemYear !== null) {
+                    const itemDateObj = new Date(itemDate);
+                    const itemMonth = itemDateObj.getMonth() + 1;
+                    const itemDecade = Math.floor(itemYear / 10) * 10;
+
+                    // Check each menu item to see if it matches
+                    menuItems.forEach((menuItem) => {
+                        const menuType = menuItem.dataset.type;
+                        const menuValue = menuItem.dataset.value;
+
+                        if (menuType === 'item' && menuValue === itemId) {
+                            activeMenuItem = menuItem;
+                        } else if (menuType === 'year' && parseInt(menuValue) === itemYear) {
+                            activeMenuItem = menuItem;
+                        } else if (menuType === 'month' && menuValue === `${itemYear}-${String(itemMonth).padStart(2, '0')}`) {
+                            activeMenuItem = menuItem;
+                        } else if (menuType === 'decade' && parseInt(menuValue) === itemDecade) {
+                            activeMenuItem = menuItem;
+                        }
+                    });
+                }
             }
 
             // Update menu active state and aria-current for accessibility

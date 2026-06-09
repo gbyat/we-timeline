@@ -67,6 +67,14 @@
 			"type": "string",
 			"default": "asc"
 		},
+		"excerptWordCount": {
+			"type": "number",
+			"default": 55
+		},
+		"showFullContent": {
+			"type": "boolean",
+			"default": false
+		},
 		"excludeFromMainLoop": {
 			"type": "boolean",
 			"default": false

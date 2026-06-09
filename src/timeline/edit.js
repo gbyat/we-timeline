@@ -23,6 +23,7 @@ import {
 	BaseControl,
 	ColorPalette,
 	__experimentalUnitControl as UnitControl,
+	RangeControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import ServerSideRender from '@wordpress/server-side-render';
@@ -83,6 +84,8 @@ export default function Edit({ attributes, setAttributes }) {
 		term,
 		dateField,
 		sortOrder,
+		excerptWordCount,
+		showFullContent,
 		excludeFromMainLoop,
 		excludeFromCategoryLists,
 		showItemDates,
@@ -489,6 +492,25 @@ export default function Edit({ attributes, setAttributes }) {
 								]}
 								onChange={(value) => setAttributes({ dateField: value })}
 							/>
+							<ToggleControl
+								label={__('Show full post content', 'we-timeline')}
+								checked={!!showFullContent}
+								onChange={(value) => setAttributes({ showFullContent: value })}
+								help={__(
+									'When off, only the excerpt is shown (manual excerpt field, or trimmed text).',
+									'we-timeline'
+								)}
+							/>
+							{!showFullContent && (
+								<RangeControl
+									label={__('Excerpt word count', 'we-timeline')}
+									value={excerptWordCount || 55}
+									onChange={(value) => setAttributes({ excerptWordCount: value })}
+									min={10}
+									max={200}
+									help={__('Used when the post has no manual excerpt.', 'we-timeline')}
+								/>
+							)}
 						</>
 					)}
 

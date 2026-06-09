@@ -58,7 +58,9 @@ class Renderer
                 }
             }
 
-            $posts = self::get_posts($post_type, $taxonomy, $term, $date_field, $sort_order);
+            $show_full_content  = ! empty($attributes['showFullContent']);
+            $excerpt_word_count = isset($attributes['excerptWordCount']) ? absint($attributes['excerptWordCount']) : 55;
+            $posts                = self::get_posts($post_type, $taxonomy, $term, $date_field, $sort_order, $excerpt_word_count, $show_full_content);
         }
 
         if (empty($posts)) {
@@ -241,9 +243,11 @@ class Renderer
      * @param int    $term Term ID.
      * @param string $date_field Date field.
      * @param string $sort_order Sort order.
+     * @param int    $excerpt_word_count Words when no manual excerpt is set.
+     * @param bool   $show_full_content  Whether to render full post content instead of excerpt.
      * @return array
      */
-    private static function get_posts($post_type, $taxonomy, $term, $date_field, $sort_order)
+    private static function get_posts($post_type, $taxonomy, $term, $date_field, $sort_order, $excerpt_word_count = 55, $show_full_content = false)
     {
         $args = array(
             'post_type'      => $post_type,
@@ -284,13 +288,25 @@ class Renderer
 
                 $date_value = self::get_date_value($post_id, $date_field);
 
-                // Get content and excerpt directly from post object to avoid filter issues.
-                $post_obj = get_post($post_id);
-                $excerpt  = $post_obj->post_excerpt;
-                if (empty($excerpt)) {
-                    $excerpt = wp_trim_words($post_obj->post_content, 55);
+                $post_obj           = get_post($post_id);
+                $excerpt_word_count = max(1, min(500, absint($excerpt_word_count)));
+                $excerpt            = '';
+                $content            = '';
+
+                if ($show_full_content) {
+                    $content = apply_filters('the_content', $post_obj->post_content);
+                } else {
+                    $manual_excerpt = trim((string) $post_obj->post_excerpt);
+                    if ('' !== $manual_excerpt) {
+                        $excerpt = apply_filters('the_excerpt', $manual_excerpt);
+                    } else {
+                        $excerpt = wp_trim_words(
+                            wp_strip_all_tags($post_obj->post_content),
+                            $excerpt_word_count,
+                            '&hellip;'
+                        );
+                    }
                 }
-                $content = apply_filters('the_content', $post_obj->post_content);
 
                 $posts[] = array(
                     'id'         => $post_id,
@@ -310,8 +326,21 @@ class Renderer
             usort(
                 $posts,
                 function ($a, $b) use ($sort_order) {
-                    $date_a = strtotime($a['date']);
-                    $date_b = strtotime($b['date']);
+                    $valid_a = self::is_sortable_date($a['date'] ?? '');
+                    $valid_b = self::is_sortable_date($b['date'] ?? '');
+
+                    if (! $valid_a && ! $valid_b) {
+                        return 0;
+                    }
+                    if (! $valid_a) {
+                        return 1;
+                    }
+                    if (! $valid_b) {
+                        return -1;
+                    }
+
+                    $date_a = self::get_date_timestamp($a['date']);
+                    $date_b = self::get_date_timestamp($b['date']);
 
                     if ('desc' === $sort_order) {
                         return $date_b <=> $date_a;
@@ -591,6 +620,49 @@ class Renderer
     }
 
     /**
+     * Whether a date string can be used for sorting and menu grouping.
+     *
+     * @param string $date_string Raw date string.
+     * @return bool
+     */
+    private static function is_sortable_date($date_string)
+    {
+        $year = self::get_timeline_year_from_date($date_string);
+        return null !== $year;
+    }
+
+    /**
+     * Extract a calendar year from a flexible date string.
+     *
+     * @param string $date_string Raw date string.
+     * @return int|null Year or null when not parseable.
+     */
+    private static function get_timeline_year_from_date($date_string)
+    {
+        $date_string = trim((string) $date_string);
+        if ('' === $date_string) {
+            return null;
+        }
+
+        $normalized = self::normalize_date_for_sort($date_string);
+        if ('' === $normalized) {
+            return null;
+        }
+
+        $timestamp = strtotime($normalized);
+        if (! $timestamp) {
+            return null;
+        }
+
+        $year = (int) gmdate('Y', $timestamp);
+        if ($year < 1000 || $year > 9999) {
+            return null;
+        }
+
+        return $year;
+    }
+
+    /**
      * Whether a date string is set and displayable.
      *
      * @param string $date_string Raw date string.
@@ -669,10 +741,10 @@ class Renderer
     {
         $normalized = self::normalize_date_for_sort($date_string);
         if ('' === $normalized) {
-            return PHP_INT_MAX;
+            return 0;
         }
         $timestamp = strtotime($normalized);
-        return $timestamp ? $timestamp : PHP_INT_MAX;
+        return $timestamp ? $timestamp : 0;
     }
 
     /**
@@ -852,7 +924,7 @@ class Renderer
             array_filter(
                 $posts,
                 function ($post) {
-                    return self::has_displayable_date($post['date'] ?? '');
+                    return self::is_sortable_date($post['date'] ?? '');
                 }
             )
         );
@@ -860,7 +932,7 @@ class Renderer
             array_filter(
                 $posts,
                 function ($post) {
-                    return ! self::has_displayable_date($post['date'] ?? '');
+                    return ! self::is_sortable_date($post['date'] ?? '');
                 }
             )
         );
@@ -911,8 +983,12 @@ class Renderer
 
         $groups = array();
         foreach ($dated_posts as $post) {
+            $year = self::get_timeline_year_from_date($post['date']);
+            if (null === $year) {
+                continue;
+            }
             $ts = self::get_date_timestamp($post['date']);
-            $y  = (int) gmdate('Y', $ts);
+            $y  = $year;
             $m  = (int) gmdate('n', $ts);
             if ('decades' === $granularity) {
                 $key = (int) (floor($y / 10) * 10);
@@ -1039,7 +1115,8 @@ class Renderer
             'data-has-background' => $has_background ? 'true' : 'false',
             'data-icon-size'      => $icon_size,
         );
-        if (self::has_displayable_date($item_date_raw)) {
+        if (self::is_sortable_date($item_date_raw)) {
+            $item_date_sort  = self::normalize_date_for_sort($item_date_raw);
             $item_data_attrs['data-date'] = $item_date_sort ? $item_date_sort : $item_date_raw;
         }
         ?>
@@ -1102,7 +1179,7 @@ class Renderer
                             <?php echo $post['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered blocks. ?>
                         </div>
                     <?php endif; ?>
-                    <?php if (! empty($post['permalink'])) : ?>
+                    <?php if (! empty($post['permalink']) && empty($attributes['showFullContent'])) : ?>
                         <a href="<?php echo esc_url($post['permalink']); ?>" class="we-timeline__item-read-more">
                             <?php echo esc_html__('Read more', 'we-timeline'); ?>
                         </a>
