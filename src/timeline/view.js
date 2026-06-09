@@ -155,16 +155,16 @@ import './timeline-progress.js';
         }
         const trimmed = String(dateStr).trim();
         if (/^\d{4}$/.test(trimmed)) {
-            return new Date(`${trimmed}-07-01T00:00:00`).getTime();
+            return Date.parse(`${trimmed}-07-01T00:00:00Z`);
         }
         if (/^\d{4}-\d{2}$/.test(trimmed)) {
-            return new Date(`${trimmed}-01T00:00:00`).getTime();
+            return Date.parse(`${trimmed}-01T00:00:00Z`);
         }
         if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-            return new Date(`${trimmed}T00:00:00`).getTime();
+            return Date.parse(`${trimmed}T00:00:00Z`);
         }
         const normalized = trimmed.replace(' ', 'T');
-        return new Date(normalized).getTime();
+        return Date.parse(normalized);
     }
 
     /**
@@ -174,11 +174,21 @@ import './timeline-progress.js';
      * @return {number|null}
      */
     function getTimelineYearFromDate(dateStr) {
+        const trimmed = String(dateStr || '').trim();
+        const yearMatch = trimmed.match(/^(\d{4})/);
+        if (yearMatch) {
+            const year = parseInt(yearMatch[1], 10);
+            if (year >= 1000 && year <= 9999) {
+                return year;
+            }
+        }
+
         const timestamp = parseTimelineDate(dateStr);
         if (Number.isNaN(timestamp)) {
             return null;
         }
-        const year = new Date(timestamp).getFullYear();
+
+        const year = new Date(timestamp).getUTCFullYear();
         if (year < 1000 || year > 9999) {
             return null;
         }
@@ -235,13 +245,7 @@ import './timeline-progress.js';
             groupedMenu = groupByGranularity(datedItems, normalizedGranularity, decadeSuffix);
         }
 
-        const undatedMenu = undatedItems.map((item) => ({
-            label: item.title,
-            value: item.id,
-            type: 'item',
-        }));
-
-        return groupedMenu.concat(undatedMenu);
+        return groupedMenu;
     }
 
     /**

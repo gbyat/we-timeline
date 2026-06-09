@@ -35,7 +35,7 @@ class Renderer
         $content_source = $attributes['contentSource'] ?? 'posts';
         $post_type  = $attributes['postType'] ?? '';
         $taxonomy   = $attributes['taxonomy'] ?? '';
-        $term       = $attributes['term'] ?? 0;
+        $term       = absint($attributes['term'] ?? 0);
         $date_field = $attributes['dateField'] ?? 'date';
         $sort_order = $attributes['sortOrder'] ?? 'asc';
         $show_menu  = $attributes['showMenu'] ?? false;
@@ -627,8 +627,28 @@ class Renderer
      */
     private static function is_sortable_date($date_string)
     {
+        if (self::is_wordpress_empty_date($date_string)) {
+            return false;
+        }
+
         $year = self::get_timeline_year_from_date($date_string);
         return null !== $year;
+    }
+
+    /**
+     * Whether a raw date string is a WordPress "empty" date placeholder.
+     *
+     * @param string $date_string Raw date string.
+     * @return bool
+     */
+    private static function is_wordpress_empty_date($date_string)
+    {
+        $date_string = trim((string) $date_string);
+        if ('' === $date_string) {
+            return true;
+        }
+
+        return (bool) preg_match('/^0000[-/]00[-/]00/', $date_string);
     }
 
     /**
@@ -649,8 +669,15 @@ class Renderer
             return null;
         }
 
+        if (preg_match('/^(\d{4})/', $normalized, $matches)) {
+            $year = (int) $matches[1];
+            if ($year >= 1000 && $year <= 9999) {
+                return $year;
+            }
+        }
+
         $timestamp = strtotime($normalized);
-        if (! $timestamp) {
+        if (false === $timestamp) {
             return null;
         }
 
@@ -725,10 +752,10 @@ class Renderer
         if ('datetime' === $precision) {
             $normalized = str_replace(' ', 'T', $date_string);
             $timestamp  = strtotime($normalized);
-            return $timestamp ? gmdate('Y-m-d\TH:i:s', $timestamp) : '';
+            return false !== $timestamp ? gmdate('Y-m-d\TH:i:s', $timestamp) : '';
         }
         $timestamp = strtotime($date_string);
-        return $timestamp ? gmdate('Y-m-d', $timestamp) : '';
+        return false !== $timestamp ? gmdate('Y-m-d', $timestamp) : '';
     }
 
     /**
@@ -744,7 +771,7 @@ class Renderer
             return 0;
         }
         $timestamp = strtotime($normalized);
-        return $timestamp ? $timestamp : 0;
+        return false !== $timestamp ? $timestamp : 0;
     }
 
     /**
@@ -765,17 +792,21 @@ class Renderer
         }
         if ('month' === $precision) {
             $timestamp = strtotime($date_string . '-01');
-            return $timestamp ? date_i18n('F Y', $timestamp) : $date_string;
+            return false !== $timestamp ? date_i18n('F Y', $timestamp) : $date_string;
+        }
+        if ('day' === $precision) {
+            $timestamp = strtotime($date_string);
+            return false !== $timestamp ? date_i18n(get_option('date_format'), $timestamp) : $date_string;
         }
         if ('datetime' === $precision) {
             $timestamp = strtotime(str_replace(' ', 'T', $date_string));
-            if (! $timestamp) {
+            if (false === $timestamp) {
                 return $date_string;
             }
             return date_i18n(get_option('date_format'), $timestamp) . ' ' . date_i18n(get_option('time_format'), $timestamp);
         }
         $timestamp = strtotime($date_string);
-        return $timestamp ? date_i18n(get_option('date_format'), $timestamp) : $date_string;
+        return false !== $timestamp ? date_i18n(get_option('date_format'), $timestamp) : $date_string;
     }
 
     /**
@@ -800,7 +831,7 @@ class Renderer
         if ('datetime' === $precision) {
             $normalized = str_replace(' ', 'T', $date_string);
             $timestamp  = strtotime($normalized);
-            return $timestamp ? gmdate('Y-m-d\TH:i:s', $timestamp) : $normalized;
+            return false !== $timestamp ? gmdate('Y-m-d\TH:i:s', $timestamp) : $normalized;
         }
         $normalized = self::normalize_date_for_sort($date_string);
         return $normalized ? $normalized : $date_string;
@@ -928,14 +959,6 @@ class Renderer
                 }
             )
         );
-        $undated_posts = array_values(
-            array_filter(
-                $posts,
-                function ($post) {
-                    return ! self::is_sortable_date($post['date'] ?? '');
-                }
-            )
-        );
 
         // Without dates, each item is listed by title in the menu.
         if (empty($dated_posts)) {
@@ -1024,14 +1047,6 @@ class Renderer
             );
         }
 
-        foreach ($undated_posts as $post) {
-            $items[] = array(
-                'label' => self::get_menu_item_label($post),
-                'value' => (string) $post['id'],
-                'type'  => 'item',
-            );
-        }
-
         return $items;
     }
 
@@ -1045,11 +1060,40 @@ class Renderer
     private static function get_date_value($post_id, $date_field)
     {
         if ('date' === $date_field) {
-            return get_the_date('Y-m-d', $post_id);
+            return self::get_sortable_post_date($post_id);
         }
 
-        $value = get_post_meta($post_id, $date_field, true);
-        return $value ? $value : get_the_date('Y-m-d', $post_id);
+        $meta = trim((string) get_post_meta($post_id, $date_field, true));
+        if ('' !== $meta) {
+            return $meta;
+        }
+
+        return self::get_sortable_post_date($post_id);
+    }
+
+    /**
+     * Post publish date when it is a valid, non-sentinel timeline date.
+     *
+     * @param int $post_id Post ID.
+     * @return string
+     */
+    private static function get_sortable_post_date($post_id)
+    {
+        $post = get_post($post_id);
+        if (! $post instanceof \WP_Post) {
+            return '';
+        }
+
+        if (self::is_wordpress_empty_date($post->post_date)) {
+            return '';
+        }
+
+        $date = get_the_date('Y-m-d', $post_id);
+        if ('' === $date || ! self::is_sortable_date($date)) {
+            return '';
+        }
+
+        return $date;
     }
 
     /**
@@ -1140,7 +1184,7 @@ class Renderer
                 <div class="we-timeline__item-body<?php echo $free_layout ? ' we-timeline__item-body--free' : ''; ?>">
                     <?php
                     $show_item_dates = ! isset($attributes['showItemDates']) || $attributes['showItemDates'];
-                    if ($show_item_dates && self::has_displayable_date($item_date_raw)) :
+                    if ($show_item_dates && self::is_sortable_date($item_date_raw)) :
                         ?>
                         <time
                             class="we-timeline__item-date<?php echo ($free_layout && ! $has_nav_in_html && empty($post['legacy_title'])) ? ' we-timeline__nav-target' : ''; ?>"
