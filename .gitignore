@@ -17,3 +17,6 @@ Thumbs.db
 
 # Build directory is NOT ignored - needed for releases
 # build/
+
+TASK-LOG.md
+.cursor/
