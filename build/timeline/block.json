@@ -104,6 +104,10 @@
       "type": "string",
       "default": "auto"
     },
+    "menuSortOrder": {
+      "type": "string",
+      "default": "inherit"
+    },
     "menuPosition": {
       "type": "string",
       "default": "sidebar"

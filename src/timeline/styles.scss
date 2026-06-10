@@ -54,9 +54,9 @@
         color: var(--we-timeline-text);
 
         .we-timeline__item {
-            &-title,
-            &-excerpt,
-            &-extra {
+            &-title:not(.has-text-color),
+            &-excerpt:not(.has-text-color),
+            &-extra:not(.has-text-color) {
                 color: inherit;
             }
         }
@@ -144,11 +144,11 @@
                 letter-spacing: 0.5px;
             }
 
-            &-title {
+            &-title:not(.has-text-color) {
                 margin: 0 0 1rem 0;
                 font-size: 1.5rem;
                 line-height: 1.3;
-                // Inherit text color from parent
+                // Inherit timeline text color unless the block sets its own.
                 color: inherit;
 
                 a {
@@ -177,10 +177,16 @@
                 }
             }
 
-            &-excerpt {
-                // Inherit text color from parent
+            &-excerpt:not(.has-text-color) {
+                // Inherit text color from parent unless the block sets its own.
                 color: inherit;
                 line-height: 1.6;
+            }
+
+            &-title.has-text-color {
+                margin: 0 0 1rem 0;
+                font-size: 1.5rem;
+                line-height: 1.3;
             }
 
             &-read-more {

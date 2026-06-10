@@ -728,6 +728,18 @@ msgid "Only applies when menu style is compact."
 msgstr "Gilt nur, wenn der Menüstil „Kompakt“ gewählt ist."
 
 #: build/timeline/index.js:1
+msgid "Menu chronological order"
+msgstr "Chronologische Menüreihenfolge"
+
+#: build/timeline/index.js:1
+msgid "Match timeline"
+msgstr "Wie Timeline"
+
+#: build/timeline/index.js:1
+msgid "Applies to decade, year, and month menu groupings only. Item-level menus follow the timeline display order."
+msgstr "Gilt nur für Menüs mit Jahrzehnten, Jahren und Monaten. Menüs auf Elementebene folgen der Darstellungsreihenfolge der Timeline."
+
+#: build/timeline/index.js:1
 msgid "Menu Granularity"
 msgstr "Menü-Ebene"
 

@@ -91,6 +91,7 @@ export default function Edit({ attributes, setAttributes }) {
 		showItemDates,
 		showMenu,
 		menuGranularity,
+		menuSortOrder,
 		menuPosition,
 		menuAlign,
 		menuStyle,
@@ -126,6 +127,7 @@ export default function Edit({ attributes, setAttributes }) {
 
 	const isItemsMode = contentSource === 'items';
 	const isStandardPostType = (postType || 'post') === 'post';
+	const isTimeGroupedMenu = showMenu && (menuGranularity || 'auto') !== 'items';
 
 	const sortOrderOptions = isItemsMode
 		? [
@@ -645,6 +647,22 @@ export default function Edit({ attributes, setAttributes }) {
 								]}
 								onChange={(value) => setAttributes({ menuGranularity: value })}
 							/>
+							{isTimeGroupedMenu && (
+								<SelectControl
+									label={__('Menu chronological order', 'we-timeline')}
+									value={menuSortOrder || 'inherit'}
+									options={[
+										{ label: __('Match timeline', 'we-timeline'), value: 'inherit' },
+										{ label: __('Oldest first', 'we-timeline'), value: 'asc' },
+										{ label: __('Newest first', 'we-timeline'), value: 'desc' },
+									]}
+									onChange={(value) => setAttributes({ menuSortOrder: value })}
+									help={__(
+										'Applies to decade, year, and month menu groupings only. Item-level menus follow the timeline display order.',
+										'we-timeline'
+									)}
+								/>
+							)}
 							<SelectControl
 								label={__('Mobile menu', 'we-timeline')}
 								value={menuMobileMode || 'inherit'}

@@ -242,7 +242,8 @@ class Renderer
             $wrapper_attributes_html = self::build_attributes($wrapper_extra);
         }
 
-        $menu_items = $show_menu ? self::build_menu_items($posts, $menu_granularity) : array();
+        $menu_sort_order = self::sanitize_menu_sort_order($attributes['menuSortOrder'] ?? 'inherit');
+        $menu_items      = $show_menu ? self::build_menu_items($posts, $menu_granularity, $sort_order, $menu_sort_order) : array();
 
         ob_start();
 ?>
@@ -256,7 +257,7 @@ class Renderer
                 $menu_mobile_label_format = self::sanitize_menu_mobile_label_format($attributes['menuMobileLabelFormat'] ?? 'year');
                 $menu_mobile_breakpoint   = self::sanitize_menu_mobile_breakpoint($attributes['menuMobileBreakpoint'] ?? 768);
                 ?>
-                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>" data-menu-mobile-mode="<?php echo esc_attr($menu_mobile_mode); ?>" data-menu-granularity-mobile="<?php echo esc_attr($menu_granularity_mobile); ?>" data-menu-mobile-label-format="<?php echo esc_attr($menu_mobile_label_format); ?>" data-menu-mobile-breakpoint="<?php echo esc_attr((string) $menu_mobile_breakpoint); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr(Settings::get_frontend_string('menu_aria_label')); ?>">
+                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-sort-order="<?php echo esc_attr($sort_order); ?>" data-menu-sort-order="<?php echo esc_attr($menu_sort_order); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>" data-menu-mobile-mode="<?php echo esc_attr($menu_mobile_mode); ?>" data-menu-granularity-mobile="<?php echo esc_attr($menu_granularity_mobile); ?>" data-menu-mobile-label-format="<?php echo esc_attr($menu_mobile_label_format); ?>" data-menu-mobile-breakpoint="<?php echo esc_attr((string) $menu_mobile_breakpoint); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr(Settings::get_frontend_string('menu_aria_label')); ?>">
                     <div class="we-timeline-menu__items">
                         <?php foreach ($menu_items as $menu_index => $menu_item) : ?>
                             <?php if ($menu_index > 0 && '' !== $menu_separator_char) : ?>
@@ -658,15 +659,48 @@ class Renderer
             return $content;
         }
 
-        $marked = preg_replace(
+        $count  = 0;
+        $marked = preg_replace_callback(
             '/<(h[1-6])(\s[^>]*)?>/',
-            '<$1 id="' . esc_attr($nav_target_id) . '" class="we-timeline__nav-target" tabindex="-1"$2>',
+            function ($matches) use ($nav_target_id, &$count) {
+                if ($count > 0) {
+                    return $matches[0];
+                }
+                ++$count;
+
+                $tag   = $matches[1];
+                $attrs = isset($matches[2]) ? (string) $matches[2] : '';
+
+                if (! preg_match('/\sid=(["\']).*?\1/', $attrs)) {
+                    $attrs .= ' id="' . esc_attr($nav_target_id) . '"';
+                }
+
+                if (preg_match('/\sclass=(["\'])([^"\']*)\1/', $attrs, $class_match)) {
+                    $classes = trim($class_match[2]);
+                    if (false === strpos($classes, 'we-timeline__nav-target')) {
+                        $classes .= ' we-timeline__nav-target';
+                    }
+                    $attrs = preg_replace(
+                        '/\sclass=(["\'])([^"\']*)\1/',
+                        ' class="' . esc_attr(trim($classes)) . '"',
+                        $attrs,
+                        1
+                    );
+                } else {
+                    $attrs .= ' class="we-timeline__nav-target"';
+                }
+
+                if (! preg_match('/\stabindex=(["\']).*?\1/', $attrs)) {
+                    $attrs .= ' tabindex="-1"';
+                }
+
+                return '<' . $tag . $attrs . '>';
+            },
             $content,
-            1,
-            $count
+            1
         );
 
-        if ($count > 0) {
+        if ($count > 0 && is_string($marked)) {
             return $marked;
         }
 
@@ -982,6 +1016,117 @@ class Renderer
     }
 
     /**
+     * Sanitize grouped menu sort order.
+     *
+     * @param string $menu_sort_order Raw menu sort order.
+     * @return string inherit, asc, or desc.
+     */
+    private static function sanitize_menu_sort_order($menu_sort_order)
+    {
+        $allowed         = array('inherit', 'asc', 'desc');
+        $menu_sort_order = is_string($menu_sort_order) ? strtolower(trim($menu_sort_order)) : 'inherit';
+
+        if (! in_array($menu_sort_order, $allowed, true)) {
+            return 'inherit';
+        }
+
+        return $menu_sort_order;
+    }
+
+    /**
+     * Resolve grouped menu key sort direction.
+     *
+     * @param string $menu_sort_order     Menu sort setting.
+     * @param string $timeline_sort_order Timeline sort order.
+     * @param string $granularity         Resolved menu granularity.
+     * @return string asc, desc, or timeline.
+     */
+    private static function resolve_menu_group_sort_direction($menu_sort_order, $timeline_sort_order, $granularity)
+    {
+        if ('items' === $granularity) {
+            return 'timeline';
+        }
+
+        $menu_sort_order     = self::sanitize_menu_sort_order($menu_sort_order);
+        $timeline_sort_order = self::sanitize_sort_order($timeline_sort_order);
+
+        if ('inherit' === $menu_sort_order) {
+            if ('manual' === $timeline_sort_order) {
+                return 'timeline';
+            }
+
+            return 'desc' === $timeline_sort_order ? 'desc' : 'asc';
+        }
+
+        return 'desc' === $menu_sort_order ? 'desc' : 'asc';
+    }
+
+    /**
+     * Earliest timeline index for a grouped menu bucket.
+     *
+     * @param array $group_posts       Posts in one menu group.
+     * @param array $post_order_index  Post ID => timeline index map.
+     * @return int
+     */
+    private static function get_menu_group_timeline_index($group_posts, $post_order_index)
+    {
+        $min_index = PHP_INT_MAX;
+
+        foreach ($group_posts as $post) {
+            $post_id = (string) ( $post['id'] ?? '' );
+            if ('' === $post_id) {
+                continue;
+            }
+
+            if (isset($post_order_index[ $post_id ])) {
+                $min_index = min($min_index, (int) $post_order_index[ $post_id ]);
+            }
+        }
+
+        return PHP_INT_MAX === $min_index ? 0 : $min_index;
+    }
+
+    /**
+     * Sort grouped menu keys chronologically or by timeline display order.
+     *
+     * @param array  $groups              Grouped posts keyed by decade/year/month.
+     * @param array  $posts               Timeline posts in display order.
+     * @param string $sort_direction      asc, desc, or timeline.
+     * @return array<int|string>
+     */
+    private static function sort_menu_group_keys($groups, $posts, $sort_direction)
+    {
+        $keys = array_keys($groups);
+
+        if ('timeline' === $sort_direction) {
+            $post_order_index = array();
+            foreach ($posts as $index => $post) {
+                $post_order_index[ (string) ( $post['id'] ?? '' ) ] = $index;
+            }
+
+            usort(
+                $keys,
+                function ($key_a, $key_b) use ($groups, $post_order_index) {
+                    $index_a = self::get_menu_group_timeline_index($groups[ $key_a ], $post_order_index);
+                    $index_b = self::get_menu_group_timeline_index($groups[ $key_b ], $post_order_index);
+
+                    return $index_a <=> $index_b;
+                }
+            );
+
+            return $keys;
+        }
+
+        if ('desc' === $sort_direction) {
+            rsort($keys, SORT_NATURAL);
+            return $keys;
+        }
+
+        sort($keys, SORT_NATURAL);
+        return $keys;
+    }
+
+    /**
      * Sanitize mobile menu label format.
      *
      * @param string $format Raw format.
@@ -1090,11 +1235,13 @@ class Renderer
     /**
      * Build menu items from posts (same grouping logic as view.js for editor and initial frontend output).
      *
-     * @param array  $posts      Timeline posts (id, date, title).
-     * @param string $granularity Menu granularity: auto, decades, years, months, items.
+     * @param array  $posts           Timeline posts (id, date, title).
+     * @param string $granularity     Menu granularity: auto, decades, years, months, items.
+     * @param string $sort_order      Timeline display sort order.
+     * @param string $menu_sort_order Grouped menu sort order.
      * @return array List of menu entries (label, value, type, first_id for groups).
      */
-    private static function build_menu_items($posts, $granularity)
+    private static function build_menu_items($posts, $granularity, $sort_order = 'asc', $menu_sort_order = 'inherit')
     {
         if (empty($posts)) {
             return array();
@@ -1177,11 +1324,14 @@ class Renderer
             }
             $groups[ $key ][] = $post;
         }
-        ksort($groups);
+
+        $sort_direction = self::resolve_menu_group_sort_direction($menu_sort_order, $sort_order, $granularity);
+        $sorted_keys    = self::sort_menu_group_keys($groups, $posts, $sort_direction);
 
         $type  = 'decades' === $granularity ? 'decade' : ('years' === $granularity ? 'year' : 'month');
         $items = array();
-        foreach ($groups as $key => $group_posts) {
+        foreach ($sorted_keys as $key) {
+            $group_posts = $groups[ $key ];
             $first = $group_posts[0];
             $ts    = self::get_date_timestamp($first['date']);
             if ('decades' === $granularity) {

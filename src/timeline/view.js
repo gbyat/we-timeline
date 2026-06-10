@@ -15,6 +15,8 @@ import './timeline-progress.js';
 
         // Get granularity from data attribute
         const granularity = menu.dataset.granularity || 'auto';
+        const sortOrder = menu.dataset.sortOrder || 'asc';
+        const menuSortOrder = menu.dataset.menuSortOrder || 'inherit';
 
         // Find the parent timeline block.
         const timelineBlock = menu.closest('.wp-block-we-timeline-timeline');
@@ -40,7 +42,7 @@ import './timeline-progress.js';
         if (hasServerRenderedItems) {
             attachMenuClickHandlers(menuContainer, timelineBlock);
         } else {
-            const menuItems = buildMenuItems(timelineItems, granularity, decadeSuffix);
+            const menuItems = buildMenuItems(timelineItems, granularity, decadeSuffix, sortOrder, menuSortOrder);
             renderMenu(menuContainer, menuItems, timelineBlock);
         }
 
@@ -272,9 +274,86 @@ import './timeline-progress.js';
     /**
      * Build menu items from timeline items.
      */
-    function buildMenuItems(timelineItems, granularity, decadeSuffix = 's') {
+    /**
+     * Resolve grouped menu key sort direction.
+     *
+     * @param {string} menuSortOrder
+     * @param {string} timelineSortOrder
+     * @param {string} granularity
+     * @return {'asc'|'desc'|'timeline'}
+     */
+    function resolveMenuGroupSortDirection(menuSortOrder, timelineSortOrder, granularity) {
+        const normalizedGranularity = (granularity || 'auto').toLowerCase().trim();
+        if (normalizedGranularity === 'items') {
+            return 'timeline';
+        }
+
+        const normalizedMenuSort = (menuSortOrder || 'inherit').toLowerCase().trim();
+        const normalizedTimelineSort = (timelineSortOrder || 'asc').toLowerCase().trim();
+
+        if (normalizedMenuSort === 'inherit') {
+            if (normalizedTimelineSort === 'manual') {
+                return 'timeline';
+            }
+            return normalizedTimelineSort === 'desc' ? 'desc' : 'asc';
+        }
+
+        return normalizedMenuSort === 'desc' ? 'desc' : 'asc';
+    }
+
+    /**
+     * @param {Record<string, Array>} groups
+     * @param {NodeListOf<Element>} timelineItems
+     * @param {'asc'|'desc'|'timeline'} sortDirection
+     * @return {string[]}
+     */
+    function sortMenuGroupKeys(groups, timelineItems, sortDirection) {
+        const keys = Object.keys(groups);
+
+        if (sortDirection === 'timeline') {
+            const orderIndex = new Map();
+            Array.from(timelineItems).forEach((item, index) => {
+                if (item.dataset.id) {
+                    orderIndex.set(item.dataset.id, index);
+                }
+            });
+
+            return keys.sort((keyA, keyB) => {
+                const indexA = getMenuGroupTimelineIndex(groups[keyA], orderIndex);
+                const indexB = getMenuGroupTimelineIndex(groups[keyB], orderIndex);
+                return indexA - indexB;
+            });
+        }
+
+        if (sortDirection === 'desc') {
+            return keys.sort().reverse();
+        }
+
+        return keys.sort();
+    }
+
+    /**
+     * @param {Array} groupItems
+     * @param {Map<string, number>} orderIndex
+     * @return {number}
+     */
+    function getMenuGroupTimelineIndex(groupItems, orderIndex) {
+        let minIndex = Number.POSITIVE_INFINITY;
+
+        groupItems.forEach((item) => {
+            if (!item.id || !orderIndex.has(item.id)) {
+                return;
+            }
+            minIndex = Math.min(minIndex, orderIndex.get(item.id));
+        });
+
+        return Number.isFinite(minIndex) ? minIndex : 0;
+    }
+
+    function buildMenuItems(timelineItems, granularity, decadeSuffix = 's', sortOrder = 'asc', menuSortOrder = 'inherit') {
         // Normalize granularity value
         const normalizedGranularity = (granularity || 'auto').toLowerCase().trim();
+        const sortDirection = resolveMenuGroupSortDirection(menuSortOrder, sortOrder, normalizedGranularity);
 
         const items = Array.from(timelineItems).map((item) => {
             const date = item.dataset.date;
@@ -314,9 +393,9 @@ import './timeline-progress.js';
 
         let groupedMenu = [];
         if (normalizedGranularity === 'auto') {
-            groupedMenu = autoGranularity(datedItems);
+            groupedMenu = autoGranularity(datedItems, timelineItems, sortDirection, decadeSuffix);
         } else {
-            groupedMenu = groupByGranularity(datedItems, normalizedGranularity, decadeSuffix);
+            groupedMenu = groupByGranularity(datedItems, normalizedGranularity, decadeSuffix, timelineItems, sortDirection);
         }
 
         return groupedMenu;
@@ -325,7 +404,7 @@ import './timeline-progress.js';
     /**
      * Auto-determine granularity.
      */
-    function autoGranularity(items) {
+    function autoGranularity(items, timelineItems, sortDirection, decadeSuffix = 's') {
         if (items.length === 0) {
             return [];
         }
@@ -352,15 +431,15 @@ import './timeline-progress.js';
             }));
         }
         if (years <= 5) {
-            return groupByGranularity(items, 'months');
+            return groupByGranularity(items, 'months', decadeSuffix, timelineItems, sortDirection);
         }
-        return groupByGranularity(items, 'years');
+        return groupByGranularity(items, 'years', decadeSuffix, timelineItems, sortDirection);
     }
 
     /**
      * Group items by granularity.
      */
-    function groupByGranularity(items, granularity, decadeSuffix = 's') {
+    function groupByGranularity(items, granularity, decadeSuffix = 's', timelineItems = [], sortDirection = 'asc') {
         if (granularity === 'items') {
             return items.map((item) => ({
                 label: item.title,
@@ -395,9 +474,9 @@ import './timeline-progress.js';
             groups[key].push(item);
         });
 
-        return Object.keys(groups)
-            .sort()
-            .map((key) => {
+        const sortedKeys = sortMenuGroupKeys(groups, timelineItems, sortDirection);
+
+        return sortedKeys.map((key) => {
                 const date = new Date(groups[key][0].date);
                 let label;
 
@@ -950,7 +1029,9 @@ import './timeline-progress.js';
 
         if (mode === 'granularity') {
             const mobileGranularity = menu.dataset.menuGranularityMobile || 'decades';
-            const menuItems = buildMenuItems(timelineItems, mobileGranularity, decadeSuffix);
+            const sortOrder = menu.dataset.sortOrder || 'asc';
+            const menuSortOrder = menu.dataset.menuSortOrder || 'inherit';
+            const menuItems = buildMenuItems(timelineItems, mobileGranularity, decadeSuffix, sortOrder, menuSortOrder);
             renderMenu(menuContainer, menuItems, timelineBlock);
             ensureMenuSeparators(menu);
             onMenuRebuild();
