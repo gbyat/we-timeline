@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.6] - 2026-06-10
+
+- Refactor date string regex in Renderer class for improved readability and consistency.
+
+
 ## [1.3.5] - 2026-06-10
 
 - Enhance GitHub update handling for multisite support; add methods to manage cached release data and update checks based on network admin context. Improve heading tag processing in Renderer class to assign IDs and classes for navigation targets.
@@ -103,3 +108,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.3.3]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.3
 [1.3.4]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.4
 [1.3.5]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.5
+[1.3.6]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.6
