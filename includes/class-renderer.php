@@ -803,7 +803,7 @@ class Renderer
             return true;
         }
 
-        return (bool) preg_match('/^0000[-/]00[-/]00/', $date_string);
+        return (bool) preg_match('#^0000[-/]00[-/]00#', $date_string);
     }
 
     /**
