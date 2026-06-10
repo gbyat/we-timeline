@@ -659,9 +659,50 @@ class Renderer
             return $content;
         }
 
+        if (class_exists('\WP_HTML_Tag_Processor')) {
+            $processor    = new \WP_HTML_Tag_Processor($content);
+            $heading_tags = array( 'H1', 'H2', 'H3', 'H4', 'H5', 'H6' );
+
+            while ($processor->next_tag()) {
+                if (! in_array($processor->get_tag(), $heading_tags, true)) {
+                    continue;
+                }
+
+                if (! $processor->get_attribute('id')) {
+                    $processor->set_attribute('id', $nav_target_id);
+                }
+
+                $classes = trim((string) $processor->get_attribute('class'));
+                if (false === strpos($classes, 'we-timeline__nav-target')) {
+                    $classes = trim($classes . ' we-timeline__nav-target');
+                }
+                $processor->set_attribute('class', $classes);
+
+                if (null === $processor->get_attribute('tabindex')) {
+                    $processor->set_attribute('tabindex', '-1');
+                }
+
+                return $processor->get_updated_html();
+            }
+
+            return $content;
+        }
+
+        return self::mark_navigation_target_in_content_regex($content, $nav_target_id);
+    }
+
+    /**
+     * Regex fallback when WP_HTML_Tag_Processor is unavailable.
+     *
+     * @param string $content       Rendered inner HTML.
+     * @param string $nav_target_id Element id to assign.
+     * @return string
+     */
+    private static function mark_navigation_target_in_content_regex($content, $nav_target_id)
+    {
         $count  = 0;
         $marked = preg_replace_callback(
-            '/<(h[1-6])(\s[^>]*)?>/',
+            '#<(h[1-6])(\s[^>]*)?>#i',
             function ($matches) use ($nav_target_id, &$count) {
                 if ($count > 0) {
                     return $matches[0];
@@ -671,17 +712,17 @@ class Renderer
                 $tag   = $matches[1];
                 $attrs = isset($matches[2]) ? (string) $matches[2] : '';
 
-                if (! preg_match('/\sid=(["\']).*?\1/', $attrs)) {
+                if (! preg_match('#\sid=(["\']).*?\1#', $attrs)) {
                     $attrs .= ' id="' . esc_attr($nav_target_id) . '"';
                 }
 
-                if (preg_match('/\sclass=(["\'])([^"\']*)\1/', $attrs, $class_match)) {
+                if (preg_match('#\sclass=(["\'])(.*?)\1#', $attrs, $class_match)) {
                     $classes = trim($class_match[2]);
                     if (false === strpos($classes, 'we-timeline__nav-target')) {
                         $classes .= ' we-timeline__nav-target';
                     }
                     $attrs = preg_replace(
-                        '/\sclass=(["\'])([^"\']*)\1/',
+                        '#\sclass=(["\'])(.*?)\1#',
                         ' class="' . esc_attr(trim($classes)) . '"',
                         $attrs,
                         1
@@ -690,7 +731,7 @@ class Renderer
                     $attrs .= ' class="we-timeline__nav-target"';
                 }
 
-                if (! preg_match('/\stabindex=(["\']).*?\1/', $attrs)) {
+                if (! preg_match('#\stabindex=(["\']).*?\1#', $attrs)) {
                     $attrs .= ' tabindex="-1"';
                 }
 

@@ -79,6 +79,11 @@ namespace Webentwicklerin\Timeline {
         $settings = new Settings();
         $settings->init();
 
+        if (is_multisite()) {
+            $network_settings = new Network_Settings();
+            $network_settings->init();
+        }
+
         $timeline_link = new Timeline_Link();
         $timeline_link->init();
 
@@ -148,6 +153,26 @@ namespace {
         private $github_response;
         private $plugin_headers;
 
+        /**
+         * Whether the updater should load hooks for the current request.
+         *
+         * On multisite, only Network Admin (and WP-Cron when enabled) runs update checks.
+         *
+         * @return bool
+         */
+        public static function should_load()
+        {
+            if (! is_multisite()) {
+                return true;
+            }
+
+            if (! \Webentwicklerin\Timeline\Network_Settings::is_github_updates_enabled()) {
+                return false;
+            }
+
+            return is_network_admin() || wp_doing_cron();
+        }
+
         public function __construct($file)
         {
             add_action('admin_init', array($this, 'set_plugin_properties'));
@@ -155,11 +180,114 @@ namespace {
             add_filter('plugins_api', array($this, 'plugin_popup'), 10, 3);
             add_filter('upgrader_post_install', array($this, 'after_install'), 10, 3);
             add_action('upgrader_process_complete', array($this, 'purge'), 10, 2);
-            add_action('admin_init', array($this, 'get_github_response'));
+            add_action('admin_init', array($this, 'maybe_fetch_github_response'));
 
             $this->file = $file;
             $this->basename = plugin_basename($this->file);
-            $this->active = is_plugin_active($this->basename);
+            $this->active = $this->is_plugin_active_for_updates();
+        }
+
+        /**
+         * Whether the plugin is active in a way that warrants update offers.
+         *
+         * @return bool
+         */
+        private function is_plugin_active_for_updates()
+        {
+            if (is_multisite()) {
+                return is_plugin_active_for_network($this->basename);
+            }
+
+            return is_plugin_active($this->basename);
+        }
+
+        /**
+         * Whether update metadata should be injected for the current request.
+         *
+         * @return bool
+         */
+        private function should_offer_update()
+        {
+            if (! $this->active || ! is_array($this->plugin) || empty($this->plugin['Version'])) {
+                return false;
+            }
+
+            if (! is_multisite()) {
+                return true;
+            }
+
+            if (! \Webentwicklerin\Timeline\Network_Settings::is_github_updates_enabled()) {
+                return false;
+            }
+
+            return is_network_admin() || wp_doing_cron();
+        }
+
+        /**
+         * Fetch GitHub release data only in allowed admin contexts.
+         */
+        public function maybe_fetch_github_response()
+        {
+            if (! $this->should_offer_update()) {
+                return;
+            }
+
+            $this->get_github_response();
+        }
+
+        /**
+         * Cache key for the latest GitHub release payload.
+         *
+         * @return string
+         */
+        private function get_release_cache_key()
+        {
+            return 'we_timeline_github_release_' . md5($this->basename);
+        }
+
+        /**
+         * @return mixed
+         */
+        private function read_cached_release()
+        {
+            $key = $this->get_release_cache_key();
+
+            if (is_multisite()) {
+                return get_site_transient($key);
+            }
+
+            return get_transient($key);
+        }
+
+        /**
+         * @param mixed $value      Value to cache.
+         * @param int   $expiration Cache lifetime in seconds.
+         */
+        private function set_cached_release($value, $expiration)
+        {
+            $key = $this->get_release_cache_key();
+
+            if (is_multisite()) {
+                set_site_transient($key, $value, $expiration);
+                return;
+            }
+
+            set_transient($key, $value, $expiration);
+        }
+
+        /**
+         * @param string $key Cache key suffix (full key is built internally).
+         */
+        private function delete_cached_release()
+        {
+            $key = $this->get_release_cache_key();
+
+            if (is_multisite()) {
+                delete_site_transient($key);
+                return;
+            }
+
+            delete_transient($key);
         }
 
         public function set_plugin_properties()
@@ -172,33 +300,79 @@ namespace {
             );
         }
 
+        /**
+         * Whether a GitHub API release payload is usable for updates.
+         *
+         * @param mixed $release Decoded JSON response.
+         * @return bool
+         */
+        private function is_valid_github_release($release)
+        {
+            return is_object($release)
+                && ! empty($release->tag_name)
+                && ! empty($release->zipball_url);
+        }
+
         public function get_github_response()
         {
-            // For public repositories, no token needed
+            $cached = $this->read_cached_release();
+
+            if ('invalid' === $cached) {
+                $this->github_response = null;
+                return;
+            }
+
+            if (is_object($cached) && $this->is_valid_github_release($cached)) {
+                $this->github_response = $cached;
+                return;
+            }
+
             $args = array(
                 'headers' => array(
                     'Accept' => 'application/vnd.github.v3+json',
                 ),
+                'timeout' => 15,
             );
 
             $response = wp_remote_get('https://api.github.com/repos/' . WE_TIMELINE_GITHUB_REPO . '/releases/latest', $args);
             if (is_wp_error($response)) {
+                $this->set_cached_release('invalid', HOUR_IN_SECONDS);
+                $this->github_response = null;
                 return;
             }
 
-            $this->github_response = json_decode(wp_remote_retrieve_body($response));
+            $status_code = (int) wp_remote_retrieve_response_code($response);
+            if ($status_code < 200 || $status_code >= 300) {
+                $this->set_cached_release('invalid', HOUR_IN_SECONDS);
+                $this->github_response = null;
+                return;
+            }
+
+            $release = json_decode(wp_remote_retrieve_body($response));
+            if (! $this->is_valid_github_release($release)) {
+                $this->set_cached_release('invalid', 12 * HOUR_IN_SECONDS);
+                $this->github_response = null;
+                return;
+            }
+
+            $this->github_response = $release;
+            $this->set_cached_release($release, 12 * HOUR_IN_SECONDS);
         }
 
         public function modify_transient($transient)
         {
-            if (!$this->github_response || !$this->active) {
+            if (! $this->should_offer_update()) {
+                return $transient;
+            }
+
+            if (! $this->is_valid_github_release($this->github_response)) {
                 return $transient;
             }
 
             $current_version = $this->plugin['Version'];
-            $new_version = ltrim($this->github_response->tag_name, 'v');
+            $new_version   = ltrim((string) $this->github_response->tag_name, 'v');
 
-            if (version_compare($current_version, $new_version, '>=')) {
+            if ('' === $new_version || version_compare($current_version, $new_version, '>=')) {
                 return $transient;
             }
 
@@ -223,7 +397,11 @@ namespace {
                 return $result;
             }
 
-            if (!$this->github_response) {
+            if (! $this->should_offer_update()) {
+                return $result;
+            }
+
+            if (! $this->is_valid_github_release($this->github_response) || ! is_array($this->plugin)) {
                 return $result;
             }
 
@@ -334,12 +512,12 @@ namespace {
 
         public function purge()
         {
-            if ($this->active) {
-                delete_transient('we_timeline_github_updater_' . $this->basename);
-            }
+            $this->delete_cached_release();
+            delete_transient('we_timeline_github_updater_' . $this->basename);
         }
     }
 
-    // Initialize GitHub Updater
-    new WE_Timeline_GitHub_Updater(WE_TIMELINE_PLUGIN_FILE);
+    if (WE_Timeline_GitHub_Updater::should_load()) {
+        new WE_Timeline_GitHub_Updater(WE_TIMELINE_PLUGIN_FILE);
+    }
 }
