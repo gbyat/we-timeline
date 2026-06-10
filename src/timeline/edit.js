@@ -651,17 +651,37 @@ export default function Edit({ attributes, setAttributes }) {
 								options={[
 									{ label: __('Same as desktop', 'we-timeline'), value: 'inherit' },
 									{ label: __('Coarser granularity', 'we-timeline'), value: 'granularity' },
-									{ label: __('Collapsed (select)', 'we-timeline'), value: 'collapsed' },
+									{ label: __('Collapsed (dropdown)', 'we-timeline'), value: 'collapsed' },
 									{ label: __('Short labels', 'we-timeline'), value: 'short-labels' },
 									{ label: __('Scrollable sticky bar', 'we-timeline'), value: 'scroll' },
-									{ label: __('Hidden (desktop only)', 'we-timeline'), value: 'hidden' },
+									{ label: __('Hide menu (desktop only)', 'we-timeline'), value: 'hidden' },
 								]}
 								onChange={(value) => setAttributes({ menuMobileMode: value })}
-								help={__(
-									'Optional override below the mobile breakpoint. Visible on the frontend only.',
-									'we-timeline'
-								)}
+								help={
+									(menuMobileMode || 'inherit') === 'collapsed'
+										? __(
+												'Replaces the link list with a dropdown below the breakpoint. Preview on the frontend only.',
+												'we-timeline'
+										  )
+										: (menuMobileMode || 'inherit') === 'hidden'
+										  ? __(
+													'Hides the menu on viewports below the breakpoint. Preview on the frontend only.',
+													'we-timeline'
+										    )
+										  : __(
+													'Optional override below the mobile breakpoint. Preview on the frontend only.',
+													'we-timeline'
+										    )
+								}
 							/>
+							{(menuMobileMode || 'inherit') === 'collapsed' && (
+								<Notice status="info" isDismissible={false}>
+									{__(
+										'The dropdown appears on the frontend when the viewport is narrower than the mobile breakpoint.',
+										'we-timeline'
+									)}
+								</Notice>
+							)}
 							<RangeControl
 								label={__('Mobile breakpoint (px)', 'we-timeline')}
 								value={menuMobileBreakpoint || 768}

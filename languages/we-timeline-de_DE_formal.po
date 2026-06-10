@@ -767,8 +767,8 @@ msgid "Coarser granularity"
 msgstr "Grobere Granularität"
 
 #: build/timeline/index.js:1
-msgid "Collapsed (select)"
-msgstr "Ausgeblendet (auswählen)"
+msgid "Collapsed (dropdown)"
+msgstr "Zugeklappt (Dropdown)"
 
 #: build/timeline/index.js:1
 msgid "Short labels"
@@ -779,12 +779,24 @@ msgid "Scrollable sticky bar"
 msgstr "Feste Leiste, die mit der Seite mitläuft"
 
 #: build/timeline/index.js:1
-msgid "Hidden (desktop only)"
-msgstr "Ausgeblendet (nur Desktop)"
+msgid "Hide menu (desktop only)"
+msgstr "Menü ausblenden (nur Desktop)"
 
 #: build/timeline/index.js:1
-msgid "Optional override below the mobile breakpoint. Visible on the frontend only."
-msgstr "Optionale Überschreibung unterhalb des mobilen Breakpoints. Nur im Frontend sichtbar."
+msgid "Optional override below the mobile breakpoint. Preview on the frontend only."
+msgstr "Optionale Überschreibung unterhalb des mobilen Breakpoints. Vorschau nur im Frontend."
+
+#: build/timeline/index.js:1
+msgid "Replaces the link list with a dropdown below the breakpoint. Preview on the frontend only."
+msgstr "Ersetzt die Linkliste unterhalb des Breakpoints durch ein Dropdown. Vorschau nur im Frontend."
+
+#: build/timeline/index.js:1
+msgid "Hides the menu on viewports below the breakpoint. Preview on the frontend only."
+msgstr "Blendet das Menü auf schmalen Viewports unterhalb des Breakpoints aus. Vorschau nur im Frontend."
+
+#: build/timeline/index.js:1
+msgid "The dropdown appears on the frontend when the viewport is narrower than the mobile breakpoint."
+msgstr "Das Dropdown erscheint im Frontend, wenn der Viewport schmaler als der mobile Breakpoint ist."
 
 #: build/timeline/index.js:1
 msgid "Mobile breakpoint (px)"
