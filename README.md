@@ -185,7 +185,6 @@ we-timeline/
 │   ├── class-exclude.php
 │   ├── class-post-type.php
 │   ├── class-renderer.php
-│   ├── class-rest-api.php
 │   ├── class-settings.php
 │   └── class-timeline-link.php
 ├── languages/           # Translation files

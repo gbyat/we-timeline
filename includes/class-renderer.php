@@ -15,6 +15,48 @@ class Renderer
 {
 
     /**
+     * Resolve published post IDs for a posts-mode timeline from block attributes.
+     *
+     * Used when saving host pages (no full render required).
+     *
+     * @param array $attributes Block attributes.
+     * @return array<int>
+     */
+    public static function get_timeline_post_ids_from_attributes($attributes)
+    {
+        if (! is_array($attributes)) {
+            $attributes = array();
+        }
+
+        if ('items' === ($attributes['contentSource'] ?? 'posts')) {
+            return array();
+        }
+
+        $post_type  = $attributes['postType'] ?? '';
+        $taxonomy   = $attributes['taxonomy'] ?? '';
+        $term       = absint($attributes['term'] ?? 0);
+        $date_field = $attributes['dateField'] ?? 'date';
+        $sort_order = self::sanitize_sort_order($attributes['sortOrder'] ?? 'asc');
+
+        if (empty($post_type)) {
+            if (! empty($taxonomy)) {
+                $taxonomy_obj = get_taxonomy($taxonomy);
+                if ($taxonomy_obj && ! empty($taxonomy_obj->object_type)) {
+                    $post_type = $taxonomy_obj->object_type[0];
+                } else {
+                    $post_type = 'post';
+                }
+            } else {
+                $post_type = 'post';
+            }
+        }
+
+        $posts = self::get_posts($post_type, $taxonomy, $term, $date_field, $sort_order);
+
+        return array_column($posts, 'id');
+    }
+
+    /**
      * Render timeline block.
      *
      * @param array         $attributes Block attributes.
@@ -67,12 +109,11 @@ class Renderer
             return '<p>' . esc_html(Settings::get_frontend_string('no_items_found')) . '</p>';
         }
 
-        // Store timeline page reference for each post (only on frontend, not in editor).
-        if ('items' !== $content_source && ! is_admin() && ! defined('REST_REQUEST')) {
+        // Sync timeline ↔ post links on the frontend only when meta is stale (e.g. new published posts).
+        if ('items' !== $content_source && ! is_admin() && ! (defined('REST_REQUEST') && REST_REQUEST)) {
             $current_page_id = get_the_ID();
             if ($current_page_id) {
-                $post_ids = array_column($posts, 'id');
-                Timeline_Link::store_timeline_page($post_ids, $current_page_id);
+                Timeline_Link::store_timeline_page(array_column($posts, 'id'), $current_page_id);
             }
         }
 

@@ -73,9 +73,6 @@ namespace Webentwicklerin\Timeline {
         $assets = new Assets();
         $assets->init();
 
-        $rest_api = new Rest_Api();
-        $rest_api->init();
-
         $exclude = new Exclude();
         $exclude->init();
 
@@ -240,7 +237,7 @@ namespace {
             }
 
             if (empty($changelog)) {
-                $changelog = $this->github_response->body ?: esc_html__('No changelog available.', 'we-timeline');
+                $changelog = esc_html__('No changelog available.', 'we-timeline');
             }
 
             $description = $this->plugin['Description'];

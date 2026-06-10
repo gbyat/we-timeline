@@ -28,6 +28,13 @@ class Timeline_Link
     const ORDER_META_KEY = '_we_timeline_post_order';
 
     /**
+     * Post types that can host a timeline block.
+     *
+     * @var array<string>
+     */
+    private static $host_post_types = array('post', 'page', 'wp_block', 'wp_template', 'wp_template_part');
+
+    /**
      * Initialize the class.
      */
     public function init()
@@ -37,6 +44,8 @@ class Timeline_Link
         add_filter('get_next_post_where', array($this, 'filter_adjacent_post_where'), 10, 5);
         add_filter('get_previous_post_sort', array($this, 'filter_adjacent_post_sort'), 10, 3);
         add_filter('get_next_post_sort', array($this, 'filter_adjacent_post_sort'), 10, 3);
+
+        add_action('save_post', array($this, 'sync_timeline_links_on_save'), 20, 1);
     }
 
     /**
@@ -47,22 +56,162 @@ class Timeline_Link
      */
     public static function store_timeline_page($post_ids, $page_id)
     {
+        $post_ids = self::normalize_post_ids($post_ids);
+        $page_id  = absint($page_id);
+
         if (empty($post_ids) || empty($page_id)) {
             return;
         }
 
-        // Store the post order on the page itself.
-        update_post_meta($page_id, self::ORDER_META_KEY, $post_ids);
+        $existing_order = get_post_meta($page_id, self::ORDER_META_KEY, true);
+        if (! is_array($existing_order)) {
+            $existing_order = array();
+        }
+        $order_changed = (self::normalize_post_ids($existing_order) !== $post_ids);
 
+        $needs_post_links = false;
         foreach ($post_ids as $post_id) {
-            // Get existing timeline pages for this post.
             $existing_pages = get_post_meta($post_id, self::META_KEY, false);
-            
-            // Only add if not already stored.
+            if (! is_array($existing_pages)) {
+                $existing_pages = array();
+            }
             if (! in_array($page_id, $existing_pages, true)) {
-                add_post_meta($post_id, self::META_KEY, $page_id);
+                $needs_post_links = true;
+                break;
             }
         }
+
+        if (! $order_changed && ! $needs_post_links) {
+            return;
+        }
+
+        if ($order_changed) {
+            update_post_meta($page_id, self::ORDER_META_KEY, $post_ids);
+        }
+
+        if ($needs_post_links) {
+            foreach ($post_ids as $post_id) {
+                $existing_pages = get_post_meta($post_id, self::META_KEY, false);
+                if (! is_array($existing_pages)) {
+                    $existing_pages = array();
+                }
+                if (! in_array($page_id, $existing_pages, true)) {
+                    add_post_meta($post_id, self::META_KEY, $page_id);
+                }
+            }
+        }
+    }
+
+    /**
+     * Persist timeline ↔ post links when a host page/template is saved.
+     *
+     * @param int $post_id Saved post ID.
+     */
+    public function sync_timeline_links_on_save($post_id)
+    {
+        $post = get_post($post_id);
+        if (! $post || wp_is_post_revision($post_id) || wp_is_post_autosave($post_id)) {
+            return;
+        }
+
+        if (! in_array($post->post_type, self::$host_post_types, true)) {
+            return;
+        }
+
+        $content = $post->post_content ?? '';
+        if ('' === $content) {
+            delete_post_meta($post_id, self::ORDER_META_KEY);
+            return;
+        }
+
+        try {
+            $blocks = parse_blocks($content);
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        $timeline_blocks = self::collect_timeline_blocks($blocks);
+        if (empty($timeline_blocks)) {
+            delete_post_meta($post_id, self::ORDER_META_KEY);
+            return;
+        }
+
+        $merged_ids = array();
+        foreach ($timeline_blocks as $block) {
+            $attrs = $block['attrs'] ?? array();
+            if ('items' === ($attrs['contentSource'] ?? 'posts')) {
+                continue;
+            }
+            $merged_ids = array_merge($merged_ids, Renderer::get_timeline_post_ids_from_attributes($attrs));
+        }
+
+        $merged_ids = self::normalize_post_ids($merged_ids);
+        if (empty($merged_ids)) {
+            delete_post_meta($post_id, self::ORDER_META_KEY);
+            return;
+        }
+
+        self::store_timeline_page($merged_ids, $post_id);
+    }
+
+    /**
+     * Normalize a list of post IDs for stable comparison and storage.
+     *
+     * @param array<int|string> $post_ids Post IDs.
+     * @return array<int>
+     */
+    private static function normalize_post_ids($post_ids)
+    {
+        if (! is_array($post_ids)) {
+            return array();
+        }
+
+        $normalized = array_map('absint', $post_ids);
+        $normalized = array_values(array_filter($normalized));
+
+        return $normalized;
+    }
+
+    /**
+     * Recursively collect we-timeline/timeline blocks from parsed block markup.
+     *
+     * @param array $blocks Parsed blocks.
+     * @param int   $depth  Recursion depth (internal).
+     * @return array
+     */
+    private static function collect_timeline_blocks($blocks, $depth = 0)
+    {
+        $found     = array();
+        $max_depth = 15;
+
+        if ($depth > $max_depth || ! is_array($blocks)) {
+            return $found;
+        }
+
+        foreach ($blocks as $block) {
+            if (isset($block['blockName']) && 'we-timeline/timeline' === $block['blockName']) {
+                $found[] = $block;
+            }
+
+            if (! empty($block['innerBlocks'])) {
+                $found = array_merge($found, self::collect_timeline_blocks($block['innerBlocks'], $depth + 1));
+                continue;
+            }
+
+            if (! empty($block['innerContent']) && is_array($block['innerContent'])) {
+                $inner_html = implode('', array_filter($block['innerContent'], 'is_string'));
+                if ('' !== $inner_html) {
+                    try {
+                        $inner_blocks = parse_blocks($inner_html);
+                        $found        = array_merge($found, self::collect_timeline_blocks($inner_blocks, $depth + 1));
+                    } catch (\Throwable $e) {
+                        // Skip unparseable inner content.
+                    }
+                }
+            }
+        }
+
+        return $found;
     }
 
     /**
