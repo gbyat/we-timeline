@@ -52,7 +52,7 @@ class Rest_Api
                     'sort_order'      => array(
                         'type'    => 'string',
                         'default' => 'asc',
-                        'enum'    => array('asc', 'desc'),
+                        'enum'    => array('asc', 'desc', 'manual'),
                     ),
                     'per_page'        => array(
                         'type'    => 'integer',
@@ -103,12 +103,21 @@ class Rest_Api
         $sort_order = $request->get_param('sort_order');
         $per_page   = $request->get_param('per_page');
 
+        $sort_order = in_array($sort_order, array('asc', 'desc', 'manual'), true) ? $sort_order : 'asc';
+
         $args = array(
             'post_type'      => $post_type ? $post_type : 'post',
             'posts_per_page' => $per_page,
             'post_status'    => 'publish',
-            'order'          => strtoupper($sort_order),
         );
+
+        if ('manual' === $sort_order) {
+            $args['orderby'] = 'menu_order';
+            $args['order']   = 'ASC';
+        } else {
+            $args['orderby'] = 'date';
+            $args['order']   = 'ASC' === $sort_order ? 'ASC' : 'DESC';
+        }
 
         // Add taxonomy query if taxonomy and term are provided.
         if ($taxonomy && $term > 0) {
@@ -147,8 +156,8 @@ class Rest_Api
             wp_reset_postdata();
         }
 
-        // Sort by date field if custom field.
-        if ('date' !== $date_field) {
+        // Sort by custom date meta when not using publish date or manual menu order.
+        if ('manual' !== $sort_order && 'date' !== $date_field) {
             usort(
                 $posts,
                 function ($a, $b) use ($sort_order) {

@@ -120,6 +120,22 @@
       "type": "string",
       "default": "none"
     },
+    "menuMobileMode": {
+      "type": "string",
+      "default": "inherit"
+    },
+    "menuGranularityMobile": {
+      "type": "string",
+      "default": "decades"
+    },
+    "menuMobileLabelFormat": {
+      "type": "string",
+      "default": "year"
+    },
+    "menuMobileBreakpoint": {
+      "type": "number",
+      "default": 768
+    },
     "stickyHeaderSelector": {
       "type": "string",
       "default": ""

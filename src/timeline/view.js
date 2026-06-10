@@ -44,8 +44,25 @@ import './timeline-progress.js';
             renderMenu(menuContainer, menuItems, timelineBlock);
         }
 
+        const desktopMenuHtml = menuContainer.innerHTML;
+
         setupStickyMenuTop(menu, timelineBlock);
-        setupScrollBehavior(menu, timelineItems);
+        updateScrollMarginTop(timelineBlock);
+        const scrollBehavior = setupScrollBehavior(menu, timelineItems);
+
+        setupMobileMenuMode({
+            menu,
+            timelineBlock,
+            timelineItems,
+            menuContainer,
+            granularity,
+            decadeSuffix,
+            desktopMenuHtml,
+            onMenuRebuild: () => {
+                updateScrollMarginTop(timelineBlock);
+                scrollBehavior.refresh();
+            },
+        });
     });
 
     /**
@@ -71,6 +88,7 @@ import './timeline-progress.js';
             }
             top = Math.max(top, measureStickyHeaderInset(timelineBlock));
             timelineBlock.style.setProperty('--we-timeline-sticky-menu-top', `${top}px`);
+            updateScrollMarginTop(timelineBlock);
         };
 
         updateStickyMenuTop();
@@ -442,7 +460,8 @@ import './timeline-progress.js';
             button.dataset.value = item.value;
             button.dataset.type = item.type;
 
-            if (item.items) {
+            if (item.items && item.items.length > 0) {
+                button.dataset.firstId = item.items[0].id;
                 button.addEventListener('click', () => {
                     scrollToFirstItem(item.items, timelineBlock);
                 });
@@ -542,16 +561,57 @@ import './timeline-progress.js';
     }
 
     /**
-     * Viewport Y for scroll anchor: below sticky site header + sticky timeline menu (mobile).
+     * Reserve vertical space for a sticky timeline menu (top bar or mobile sidebar).
+     * Uses stick position + full height so scroll targets stay below the menu after scroll.
+     *
+     * @param {Element} menu          Menu nav element.
+     * @param {Element} timelineBlock Timeline root element.
+     * @return {number}
+     */
+    function getStickyTimelineMenuInset(menu, timelineBlock) {
+        if (!menu) {
+            return 0;
+        }
+
+        const position = getComputedStyle(menu).position;
+
+        // Fixed sidebar (desktop): does not cover the top of the content column.
+        if (position === 'fixed') {
+            return 0;
+        }
+
+        if (position !== 'sticky') {
+            return 0;
+        }
+
+        const stickTop = readTimelineCssLength(timelineBlock, '--we-timeline-sticky-menu-top');
+        const menuHeight = menu.offsetHeight || menu.getBoundingClientRect().height;
+
+        return stickTop + menuHeight;
+    }
+
+    /**
+     * Sync scroll-margin-top for items/headings with the live anchor inset.
+     *
+     * @param {Element} timelineBlock Timeline root element.
+     */
+    function updateScrollMarginTop(timelineBlock) {
+        if (!timelineBlock) {
+            return;
+        }
+
+        timelineBlock.style.setProperty('--we-timeline-scroll-margin-top', `${getNavAnchorY(timelineBlock)}px`);
+    }
+
+    /**
+     * Viewport Y for scroll anchor: below sticky site header + sticky timeline menu + gap.
      *
      * @param {Element} timelineBlock Timeline root element.
      * @return {number}
      */
     function getNavAnchorY(timelineBlock) {
         const blockStyles = getComputedStyle(timelineBlock);
-        let inset =
-            readTimelineCssLength(timelineBlock, '--we-timeline-nav-anchor-min') +
-            readTimelineCssLength(timelineBlock, '--we-timeline-nav-anchor-offset');
+        let inset = readTimelineCssLength(timelineBlock, '--we-timeline-nav-anchor-offset');
 
         const adminBar = document.getElementById('wpadminbar');
         if (adminBar) {
@@ -562,19 +622,7 @@ import './timeline-progress.js';
 
         const menu = timelineBlock.querySelector('.we-timeline-menu');
         if (menu) {
-            const menuStyle = getComputedStyle(menu);
-            const menuPosition = menuStyle.position;
-
-            // Sticky menu above items (mobile): reserve its height at the stick position.
-            if (menuPosition === 'sticky') {
-                const menuRect = menu.getBoundingClientRect();
-                const stickTop = parseFloat(menuStyle.top) || 0;
-                const reservedBottom =
-                    menuRect.top <= stickTop + 2
-                        ? menuRect.bottom
-                        : stickTop + menuRect.height;
-                inset = Math.max(inset, reservedBottom);
-            }
+            inset = Math.max(inset, getStickyTimelineMenuInset(menu, timelineBlock));
         }
 
         // Optional CSS fallback when no selector is set (static px).
@@ -587,14 +635,24 @@ import './timeline-progress.js';
     }
 
     /**
-     * Nudge scroll so the target sits on the current anchor line.
+     * Item top edge for scroll positioning (keeps padding/date above the heading visible).
      *
-     * @param {Element} target        Scroll target (heading).
+     * @param {Element} item Timeline item article.
+     * @return {Element}
+     */
+    function getItemScrollAnchor(item) {
+        return item;
+    }
+
+    /**
+     * Nudge scroll so the item top sits on the current anchor line.
+     *
+     * @param {Element} item          Timeline item article.
      * @param {Element} timelineBlock Timeline root element.
      * @return {boolean} Whether a scroll adjustment was made.
      */
-    function alignScrollTargetToAnchor(target, timelineBlock) {
-        const delta = target.getBoundingClientRect().top - getNavAnchorY(timelineBlock);
+    function alignScrollTargetToAnchor(item, timelineBlock) {
+        const delta = getItemScrollAnchor(item).getBoundingClientRect().top - getNavAnchorY(timelineBlock);
         if (Math.abs(delta) <= 2) {
             return false;
         }
@@ -636,7 +694,7 @@ import './timeline-progress.js';
     }
 
     /**
-     * Scroll to timeline item — align heading with timeline block top (calm page scroll).
+     * Scroll to timeline item — item top below sticky header/menu; heading remains focus target.
      */
     function scrollToItem(itemId, timelineBlock = document) {
         const scope = timelineBlock || document;
@@ -646,9 +704,10 @@ import './timeline-progress.js';
             return;
         }
 
-        const target = getItemScrollTarget(item);
+        const focusTarget = getItemScrollTarget(item);
+        const scrollAnchor = getItemScrollAnchor(item);
         const anchorY = getNavAnchorY(scope);
-        const delta = target.getBoundingClientRect().top - anchorY;
+        const delta = scrollAnchor.getBoundingClientRect().top - anchorY;
 
         window.scrollTo({
             top: Math.max(0, window.scrollY + delta),
@@ -656,28 +715,281 @@ import './timeline-progress.js';
         });
 
         afterScrollSettles(() => {
-            alignScrollTargetToAnchor(target, scope);
+            alignScrollTargetToAnchor(item, scope);
         });
 
-        if (typeof target.focus === 'function') {
-            target.focus({ preventScroll: true });
+        if (typeof focusTarget.focus === 'function') {
+            focusTarget.focus({ preventScroll: true });
         }
     }
 
     /**
+     * Clamp mobile menu breakpoint from data attribute.
+     *
+     * @param {Element} menu Menu nav element.
+     * @return {number}
+     */
+    function getMenuMobileBreakpoint(menu) {
+        const parsed = parseInt(menu.dataset.menuMobileBreakpoint, 10);
+        if (Number.isNaN(parsed)) {
+            return 768;
+        }
+        return Math.min(1200, Math.max(480, parsed));
+    }
+
+    /**
+     * Build per-item menu entries with shortened labels for small screens.
+     *
+     * @param {NodeListOf<Element>} timelineItems Timeline items.
+     * @param {string}              labelFormat    year | year-title | title-truncate.
+     * @param {number}              maxLength      Max label length before ellipsis.
+     * @return {Array<{label: string, value: string, type: string}>}
+     */
+    function buildShortLabelMenuItems(timelineItems, labelFormat, maxLength = 28) {
+        const format = (labelFormat || 'year').toLowerCase();
+
+        return Array.from(timelineItems).map((item) => {
+            const title = getItemNavigationTitle(item) || item.dataset.id || '';
+            const year = item.dataset.date ? getTimelineYearFromDate(item.dataset.date) : null;
+            const truncated = title.length > maxLength ? `${title.slice(0, maxLength - 1)}…` : title;
+            let label = truncated;
+
+            if (format === 'year' && year !== null) {
+                label = String(year);
+            } else if (format === 'year-title' && year !== null) {
+                label = `${year} – ${truncated}`;
+            }
+
+            return {
+                label,
+                value: item.dataset.id,
+                type: 'item',
+            };
+        });
+    }
+
+    /**
+     * Collect scroll targets from rendered menu buttons.
+     *
+     * @param {Element} menuContainer Menu items wrapper.
+     * @return {Array<{label: string, scrollId: string, type: string, value: string}>}
+     */
+    function collectMenuEntries(menuContainer) {
+        return Array.from(menuContainer.querySelectorAll('.we-timeline-menu__item')).map((button) => {
+            const type = button.dataset.type || 'item';
+            const value = button.dataset.value || '';
+            const scrollId = type === 'item' ? value : button.dataset.firstId || value;
+
+            return {
+                label: button.textContent.trim(),
+                scrollId,
+                type,
+                value,
+            };
+        });
+    }
+
+    /**
+     * Render a single select control for collapsed mobile menu mode.
+     *
+     * @param {Element} menuContainer Menu items wrapper.
+     * @param {Element} menu          Menu nav element.
+     * @param {Array}   entries       Menu entries from collectMenuEntries.
+     * @param {Element} timelineBlock Timeline root element.
+     */
+    function renderCollapsedSelect(menuContainer, menu, entries, timelineBlock) {
+        menu.classList.add('we-timeline-menu--collapsed');
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'we-timeline-menu__collapsed';
+
+        const select = document.createElement('select');
+        select.className = 'we-timeline-menu__select';
+        select.setAttribute('aria-label', menu.getAttribute('aria-label') || 'Jump to timeline periods');
+
+        entries.forEach((entry) => {
+            const option = document.createElement('option');
+            option.value = entry.scrollId;
+            option.textContent = entry.label;
+            option.dataset.menuType = entry.type;
+            option.dataset.menuValue = entry.value;
+            select.appendChild(option);
+        });
+
+        select.addEventListener('change', () => {
+            if (select.value) {
+                scrollToItem(select.value, timelineBlock);
+            }
+        });
+
+        wrapper.appendChild(select);
+        menuContainer.appendChild(wrapper);
+    }
+
+    /**
+     * Restore desktop menu markup and re-bind handlers.
+     *
+     * @param {Object} state Mobile menu state bag.
+     */
+    function restoreDesktopMenu(state) {
+        const { menu, menuContainer, timelineBlock, desktopMenuHtml } = state;
+
+        menu.classList.remove(
+            'we-timeline-menu--mobile-scroll',
+            'we-timeline-menu--collapsed',
+            'we-timeline-menu--mobile-hidden',
+            'we-timeline-menu--mobile-active'
+        );
+        menu.removeAttribute('hidden');
+        menuContainer.innerHTML = desktopMenuHtml;
+
+        ensureMenuSeparators(menu);
+
+        const buttons = menuContainer.querySelectorAll('.we-timeline-menu__item');
+        if (buttons.length > 0) {
+            attachMenuClickHandlers(menuContainer, timelineBlock);
+        }
+
+        state.onMenuRebuild();
+    }
+
+    /**
+     * Apply configured mobile menu override below the block breakpoint.
+     *
+     * @param {Object} state Mobile menu state bag.
+     */
+    function applyMobileMenu(state) {
+        const {
+            menu,
+            timelineBlock,
+            timelineItems,
+            menuContainer,
+            decadeSuffix,
+            onMenuRebuild,
+        } = state;
+
+        const mode = (menu.dataset.menuMobileMode || 'inherit').toLowerCase();
+        if (mode === 'inherit') {
+            return;
+        }
+
+        menu.classList.add('we-timeline-menu--mobile-active');
+        menu.classList.remove('we-timeline-menu--mobile-scroll', 'we-timeline-menu--collapsed', 'we-timeline-menu--mobile-hidden');
+        menu.removeAttribute('hidden');
+
+        if (mode === 'hidden') {
+            menu.classList.add('we-timeline-menu--mobile-hidden');
+            menu.setAttribute('hidden', '');
+            onMenuRebuild();
+            return;
+        }
+
+        if (mode === 'scroll') {
+            menu.classList.add('we-timeline-menu--mobile-scroll');
+            onMenuRebuild();
+            return;
+        }
+
+        menuContainer.innerHTML = '';
+
+        if (mode === 'granularity') {
+            const mobileGranularity = menu.dataset.menuGranularityMobile || 'decades';
+            const menuItems = buildMenuItems(timelineItems, mobileGranularity, decadeSuffix);
+            renderMenu(menuContainer, menuItems, timelineBlock);
+            ensureMenuSeparators(menu);
+            onMenuRebuild();
+            return;
+        }
+
+        if (mode === 'short-labels') {
+            const labelFormat = menu.dataset.menuMobileLabelFormat || 'year';
+            const menuItems = buildShortLabelMenuItems(timelineItems, labelFormat);
+            renderMenu(menuContainer, menuItems, timelineBlock);
+            ensureMenuSeparators(menu);
+            onMenuRebuild();
+            return;
+        }
+
+        if (mode === 'collapsed') {
+            const temp = document.createElement('div');
+            temp.innerHTML = state.desktopMenuHtml;
+            const entries = collectMenuEntries(temp);
+
+            if (entries.length === 0) {
+                menuContainer.innerHTML = state.desktopMenuHtml;
+                ensureMenuSeparators(menu);
+                attachMenuClickHandlers(menuContainer, timelineBlock);
+            } else {
+                renderCollapsedSelect(menuContainer, menu, entries, timelineBlock);
+            }
+
+            onMenuRebuild();
+        }
+    }
+
+    /**
+     * Toggle mobile viewport class and apply/restore mobile menu modes on resize.
+     *
+     * @param {Object} state Mobile menu state bag.
+     */
+    function setupMobileMenuMode(state) {
+        const { menu, timelineBlock } = state;
+        const breakpoint = getMenuMobileBreakpoint(menu);
+        timelineBlock.style.setProperty('--we-timeline-mobile-breakpoint', `${breakpoint}px`);
+
+        const getMediaQuery = () => window.matchMedia(`(max-width: ${breakpoint}px)`);
+
+        const syncMobileViewport = () => {
+            const mediaQuery = getMediaQuery();
+            if (mediaQuery.matches) {
+                timelineBlock.classList.add('we-timeline--mobile-viewport');
+            } else {
+                timelineBlock.classList.remove('we-timeline--mobile-viewport');
+            }
+        };
+
+        const syncMobileMenu = () => {
+            syncMobileViewport();
+            const mode = (menu.dataset.menuMobileMode || 'inherit').toLowerCase();
+            const mediaQuery = getMediaQuery();
+
+            if (!mediaQuery.matches || mode === 'inherit') {
+                if (menu.classList.contains('we-timeline-menu--mobile-active')) {
+                    restoreDesktopMenu(state);
+                }
+                return;
+            }
+
+            applyMobileMenu(state);
+        };
+
+        syncMobileMenu();
+
+        const mediaQuery = getMediaQuery();
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', syncMobileMenu);
+        } else if (typeof mediaQuery.addListener === 'function') {
+            mediaQuery.addListener(syncMobileMenu);
+        }
+
+        window.addEventListener('resize', syncMobileViewport, { passive: true });
+    }
+
+    /**
      * Setup scroll behavior.
+     *
+     * @param {Element} menu          Menu nav element.
+     * @param {NodeListOf<Element>} timelineItems Timeline items.
+     * @return {{refresh: Function}}
      */
     function setupScrollBehavior(menu, timelineItems) {
         const menuContainer = menu.querySelector('.we-timeline-menu__items');
         if (!menuContainer) {
-            return;
+            return { refresh: () => {} };
         }
 
         const timelineBlock = menu.closest('.wp-block-we-timeline-timeline');
 
-        // Get menu items to determine their types
-        const menuItems = Array.from(menuContainer.querySelectorAll('.we-timeline-menu__item'));
-        
         // Find the item whose nav target is closest to the timeline top anchor.
         function findActiveItem() {
             if (!timelineBlock) {
@@ -691,8 +1003,7 @@ import './timeline-progress.js';
             let closestDistance = Infinity;
             
             timelineItems.forEach((item) => {
-                const target = getItemScrollTarget(item);
-                const rect = target.getBoundingClientRect();
+                const rect = getItemScrollAnchor(item).getBoundingClientRect();
                 const distance = Math.abs(rect.top - referencePoint);
                 
                 if (rect.bottom > 0 && rect.top < viewportHeight) {
@@ -723,12 +1034,59 @@ import './timeline-progress.js';
             });
             activeItem.classList.add('is-active');
 
+            const collapsedSelect = menu.classList.contains('we-timeline-menu--collapsed')
+                ? menuContainer.querySelector('.we-timeline-menu__select')
+                : null;
+
+            if (collapsedSelect) {
+                let matchedValue = itemId;
+
+                if (itemDate) {
+                    const itemYear = getTimelineYearFromDate(itemDate);
+                    if (itemYear !== null) {
+                        const itemDateObj = new Date(itemDate);
+                        const itemMonth = itemDateObj.getMonth() + 1;
+                        const itemDecade = Math.floor(itemYear / 10) * 10;
+
+                        Array.from(collapsedSelect.options).some((option) => {
+                            const menuType = option.dataset.menuType;
+                            const menuValue = option.dataset.menuValue;
+
+                            if (menuType === 'item' && menuValue === itemId) {
+                                matchedValue = option.value;
+                                return true;
+                            }
+                            if (menuType === 'year' && parseInt(menuValue, 10) === itemYear) {
+                                matchedValue = option.value;
+                                return true;
+                            }
+                            if (menuType === 'month' && menuValue === `${itemYear}-${String(itemMonth).padStart(2, '0')}`) {
+                                matchedValue = option.value;
+                                return true;
+                            }
+                            if (menuType === 'decade' && parseInt(menuValue, 10) === itemDecade) {
+                                matchedValue = option.value;
+                                return true;
+                            }
+                            return false;
+                        });
+                    }
+                }
+
+                if (collapsedSelect.value !== matchedValue) {
+                    collapsedSelect.value = matchedValue;
+                }
+                return;
+            }
+
+            const menuItems = Array.from(menuContainer.querySelectorAll('.we-timeline-menu__item'));
+
             // Find and highlight corresponding menu item
             let activeMenuItem = null;
-            
+
             // First try to find exact match by item ID
             activeMenuItem = menuContainer.querySelector(`[data-value="${itemId}"]`);
-            
+
             // If not found, try to find by date/group
             if (!activeMenuItem && itemDate) {
                 const itemYear = getTimelineYearFromDate(itemDate);
@@ -737,18 +1095,17 @@ import './timeline-progress.js';
                     const itemMonth = itemDateObj.getMonth() + 1;
                     const itemDecade = Math.floor(itemYear / 10) * 10;
 
-                    // Check each menu item to see if it matches
                     menuItems.forEach((menuItem) => {
                         const menuType = menuItem.dataset.type;
                         const menuValue = menuItem.dataset.value;
 
                         if (menuType === 'item' && menuValue === itemId) {
                             activeMenuItem = menuItem;
-                        } else if (menuType === 'year' && parseInt(menuValue) === itemYear) {
+                        } else if (menuType === 'year' && parseInt(menuValue, 10) === itemYear) {
                             activeMenuItem = menuItem;
                         } else if (menuType === 'month' && menuValue === `${itemYear}-${String(itemMonth).padStart(2, '0')}`) {
                             activeMenuItem = menuItem;
-                        } else if (menuType === 'decade' && parseInt(menuValue) === itemDecade) {
+                        } else if (menuType === 'decade' && parseInt(menuValue, 10) === itemDecade) {
                             activeMenuItem = menuItem;
                         }
                     });
@@ -783,5 +1140,9 @@ import './timeline-progress.js';
         
         // Initial update
         updateActiveStates();
+
+        return {
+            refresh: updateActiveStates,
+        };
     }
 })();

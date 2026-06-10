@@ -37,7 +37,7 @@ class Renderer
         $taxonomy   = $attributes['taxonomy'] ?? '';
         $term       = absint($attributes['term'] ?? 0);
         $date_field = $attributes['dateField'] ?? 'date';
-        $sort_order = $attributes['sortOrder'] ?? 'asc';
+        $sort_order = self::sanitize_sort_order($attributes['sortOrder'] ?? 'asc');
         $show_menu  = $attributes['showMenu'] ?? false;
         $menu_granularity = $attributes['menuGranularity'] ?? 'auto';
 
@@ -208,10 +208,14 @@ class Renderer
         <div <?php echo $wrapper_attributes_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- get_block_wrapper_attributes() is escaped. ?>>
             <?php if ($show_menu) : ?>
                 <?php
-                $menu_separator_char = self::get_menu_separator_char($attributes);
-                $menu_separators     = self::sanitize_menu_separators($attributes['menuSeparators'] ?? 'none');
+                $menu_separator_char      = self::get_menu_separator_char($attributes);
+                $menu_separators          = self::sanitize_menu_separators($attributes['menuSeparators'] ?? 'none');
+                $menu_mobile_mode         = self::sanitize_menu_mobile_mode($attributes['menuMobileMode'] ?? 'inherit');
+                $menu_granularity_mobile  = self::sanitize_menu_granularity($attributes['menuGranularityMobile'] ?? 'decades');
+                $menu_mobile_label_format = self::sanitize_menu_mobile_label_format($attributes['menuMobileLabelFormat'] ?? 'year');
+                $menu_mobile_breakpoint   = self::sanitize_menu_mobile_breakpoint($attributes['menuMobileBreakpoint'] ?? 768);
                 ?>
-                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr__('Jump to timeline periods', 'we-timeline'); ?>">
+                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>" data-menu-mobile-mode="<?php echo esc_attr($menu_mobile_mode); ?>" data-menu-granularity-mobile="<?php echo esc_attr($menu_granularity_mobile); ?>" data-menu-mobile-label-format="<?php echo esc_attr($menu_mobile_label_format); ?>" data-menu-mobile-breakpoint="<?php echo esc_attr((string) $menu_mobile_breakpoint); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr__('Jump to timeline periods', 'we-timeline'); ?>">
                     <div class="we-timeline-menu__items">
                         <?php foreach ($menu_items as $menu_index => $menu_item) : ?>
                             <?php if ($menu_index > 0 && '' !== $menu_separator_char) : ?>
@@ -268,12 +272,14 @@ class Renderer
             );
         }
 
-        // Set orderby and order for date field.
-        if ('date' === $date_field) {
+        // Set query order: manual uses menu_order; date field uses publish date; custom meta sorts after fetch.
+        if ('manual' === $sort_order) {
+            $args['orderby'] = 'menu_order';
+            $args['order']   = 'ASC';
+        } elseif ('date' === $date_field) {
             $args['orderby'] = 'date';
-            $args['order']   = strtoupper($sort_order);
+            $args['order']   = 'ASC' === $sort_order ? 'ASC' : 'DESC';
         } else {
-            // For custom fields, we'll sort after fetching.
             $args['orderby'] = 'date';
             $args['order']   = 'ASC';
         }
@@ -321,8 +327,8 @@ class Renderer
             wp_reset_postdata();
         }
 
-        // Sort by date field if custom field.
-        if ('date' !== $date_field) {
+        // Sort by custom date meta when not using publish date or manual menu order.
+        if ('manual' !== $sort_order && 'date' !== $date_field) {
             usort(
                 $posts,
                 function ($a, $b) use ($sort_order) {
@@ -436,20 +442,53 @@ class Renderer
             );
         }
 
-        usort(
-            $items,
-            function ($a, $b) use ($sort_order) {
-                $date_a = self::get_date_timestamp($a['date']);
-                $date_b = self::get_date_timestamp($b['date']);
+        if ('manual' !== $sort_order) {
+            usort(
+                $items,
+                function ($a, $b) use ($sort_order) {
+                    $valid_a = self::is_sortable_date($a['date'] ?? '');
+                    $valid_b = self::is_sortable_date($b['date'] ?? '');
 
-                if ('desc' === $sort_order) {
-                    return $date_b <=> $date_a;
+                    if (! $valid_a && ! $valid_b) {
+                        return 0;
+                    }
+                    if (! $valid_a) {
+                        return 1;
+                    }
+                    if (! $valid_b) {
+                        return -1;
+                    }
+
+                    $date_a = self::get_date_timestamp($a['date']);
+                    $date_b = self::get_date_timestamp($b['date']);
+
+                    if ('desc' === $sort_order) {
+                        return $date_b <=> $date_a;
+                    }
+                    return $date_a <=> $date_b;
                 }
-                return $date_a <=> $date_b;
-            }
-        );
+            );
+        }
 
         return $items;
+    }
+
+    /**
+     * Sanitize timeline item sort order.
+     *
+     * @param string $sort_order Raw sort order.
+     * @return string asc, desc, or manual.
+     */
+    private static function sanitize_sort_order($sort_order)
+    {
+        $allowed    = array('asc', 'desc', 'manual');
+        $sort_order = is_string($sort_order) ? strtolower(trim($sort_order)) : 'asc';
+
+        if (! in_array($sort_order, $allowed, true)) {
+            return 'asc';
+        }
+
+        return $sort_order;
     }
 
     /**
@@ -864,6 +903,79 @@ class Renderer
         }
 
         return $separators;
+    }
+
+    /**
+     * Sanitize mobile menu mode.
+     *
+     * @param string $mode Raw mode.
+     * @return string
+     */
+    private static function sanitize_menu_mobile_mode($mode)
+    {
+        $allowed = array('inherit', 'granularity', 'collapsed', 'short-labels', 'scroll', 'hidden');
+        $mode    = is_string($mode) ? strtolower(trim($mode)) : 'inherit';
+
+        if (! in_array($mode, $allowed, true)) {
+            return 'inherit';
+        }
+
+        return $mode;
+    }
+
+    /**
+     * Sanitize menu granularity value.
+     *
+     * @param string $granularity Raw granularity.
+     * @return string
+     */
+    private static function sanitize_menu_granularity($granularity)
+    {
+        $allowed     = array('auto', 'decades', 'years', 'months', 'items');
+        $granularity = is_string($granularity) ? strtolower(trim($granularity)) : 'auto';
+
+        if (! in_array($granularity, $allowed, true)) {
+            return 'auto';
+        }
+
+        return $granularity;
+    }
+
+    /**
+     * Sanitize mobile menu label format.
+     *
+     * @param string $format Raw format.
+     * @return string
+     */
+    private static function sanitize_menu_mobile_label_format($format)
+    {
+        $allowed = array('year', 'year-title', 'title-truncate');
+        $format  = is_string($format) ? strtolower(trim($format)) : 'year';
+
+        if (! in_array($format, $allowed, true)) {
+            return 'year';
+        }
+
+        return $format;
+    }
+
+    /**
+     * Sanitize mobile menu breakpoint in pixels.
+     *
+     * @param mixed $breakpoint Raw breakpoint.
+     * @return int
+     */
+    private static function sanitize_menu_mobile_breakpoint($breakpoint)
+    {
+        $breakpoint = absint($breakpoint);
+        if ($breakpoint < 480) {
+            return 480;
+        }
+        if ($breakpoint > 1200) {
+            return 1200;
+        }
+
+        return $breakpoint;
     }
 
     /**

@@ -32,8 +32,8 @@
     --we-timeline-menu-active-color: var(--we-timeline-line-active-color);
     --we-timeline-menu-active-background-color: transparent;
     // Menu scroll anchor: heading lands below sticky header (+ optional gap).
-    --we-timeline-nav-anchor-min: 0px;
-    --we-timeline-nav-anchor-offset: 0.5rem;
+    --we-timeline-nav-anchor-offset: 0.75rem;
+    --we-timeline-scroll-margin-top: var(--we-timeline-nav-anchor-offset);
     // Fallback only when no sticky header selector is set on the block.
     --we-timeline-sticky-header-offset: 0px;
     --we-timeline-sticky-menu-top: 0px;
@@ -86,6 +86,7 @@
 
         &__item {
             position: relative;
+            scroll-margin-top: var(--we-timeline-scroll-margin-top, var(--we-timeline-nav-anchor-offset, 0.75rem));
             padding: var(--we-timeline-item-padding, 1.5rem);
             // Use WordPress background color if set, otherwise fallback
             background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
@@ -1409,12 +1410,49 @@
                 gap: 0.25rem;
             }
         }
+
+        // Mobile override: hide navigation below the block breakpoint
+        &--mobile-hidden {
+            display: none !important;
+        }
+
+        // Mobile override: capped height for long sticky menus
+        &--mobile-scroll {
+            max-height: min(40vh, 12rem);
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+
+            .we-timeline-menu__items {
+                flex-wrap: wrap;
+            }
+        }
+
+        // Mobile override: single select instead of button row
+        &--collapsed {
+            .we-timeline-menu__collapsed {
+                width: 100%;
+            }
+
+            .we-timeline-menu__select {
+                width: 100%;
+                max-width: 100%;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+                font-family: inherit;
+                line-height: 1.4;
+                color: var(--we-timeline-menu-text-color, var(--we-timeline-text));
+                background: var(--we-timeline-menu-background-color, var(--we-timeline-background, #fff));
+                border: 1px solid var(--we-timeline-line-color, var(--we-timeline-border, #ccc));
+                border-radius: 4px;
+                cursor: pointer;
+            }
+        }
     }
 }
 
-// Scroll target for timeline menu (heading or date — not the full item container).
+// Scroll target for timeline menu (heading or date — focus landmark inside the item).
 .we-timeline__nav-target {
-    scroll-margin-top: var(--we-timeline-nav-anchor-min, 0px);
     scroll-margin-bottom: 1rem;
 }
 
@@ -1469,54 +1507,62 @@
     }
 }
 
-// Responsive: sidebar becomes sticky top bar on small screens
-@media (max-width: 768px) {
-    .wp-block-we-timeline-timeline {
-        .we-timeline-menu {
-            z-index: 50;
+// Responsive: sidebar becomes sticky top bar on small screens (default 768px + block breakpoint via JS class)
+@mixin timeline-menu-mobile-layout {
+    .we-timeline-menu {
+        z-index: 50;
 
-            &--sidebar {
-                position: sticky;
-                top: var(--we-timeline-sticky-menu-top, 0);
-                right: auto;
-                transform: none;
-                max-width: 100%;
-                width: 100%;
-                margin-bottom: 2rem;
-                max-height: none;
-                overflow: visible;
+        &--sidebar {
+            position: sticky;
+            top: var(--we-timeline-sticky-menu-top, 0);
+            right: auto;
+            transform: none;
+            max-width: 100%;
+            width: 100%;
+            margin-bottom: 2rem;
+            max-height: none;
+            overflow: visible;
 
-                &:not(.we-timeline-menu--compact) {
-                    .we-timeline-menu__items {
-                        flex-direction: row;
-                        flex-wrap: wrap;
-                        gap: 0.25rem 0.5rem;
-                    }
-
-                    padding: 0.75rem 1rem;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    background: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
+            &:not(.we-timeline-menu--compact) {
+                .we-timeline-menu__items {
+                    flex-direction: row;
+                    flex-wrap: wrap;
+                    gap: 0.25rem 0.5rem;
                 }
 
-                &.we-timeline-menu--compact {
-                    .we-timeline-menu__items {
-                        display: block;
-                        gap: 0;
-                        text-align: left;
-                    }
-
-                    .we-timeline-menu__item,
-                    .we-timeline-menu__separator {
-                        display: inline;
-                        width: auto;
-                    }
-                }
+                padding: 0.75rem 1rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                background: var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
             }
 
-            &--top {
-                z-index: 50;
+            &.we-timeline-menu--compact {
+                .we-timeline-menu__items {
+                    display: block;
+                    gap: 0;
+                    text-align: left;
+                }
+
+                .we-timeline-menu__item,
+                .we-timeline-menu__separator {
+                    display: inline;
+                    width: auto;
+                }
             }
         }
+
+        &--top {
+            z-index: 50;
+        }
     }
+}
+
+@media (max-width: 768px) {
+    .wp-block-we-timeline-timeline {
+        @include timeline-menu-mobile-layout;
+    }
+}
+
+.wp-block-we-timeline-timeline.we-timeline--mobile-viewport {
+    @include timeline-menu-mobile-layout;
 }

@@ -95,6 +95,10 @@ export default function Edit({ attributes, setAttributes }) {
 		menuAlign,
 		menuStyle,
 		menuSeparators,
+		menuMobileMode,
+		menuGranularityMobile,
+		menuMobileLabelFormat,
+		menuMobileBreakpoint,
 		stickyHeaderSelector,
 		itemBorderRadius,
 		itemBorderWidth,
@@ -121,6 +125,27 @@ export default function Edit({ attributes, setAttributes }) {
 	const showItemBorderWidth = itemBorderStyleValue !== 'none';
 
 	const isItemsMode = contentSource === 'items';
+	const isStandardPostType = (postType || 'post') === 'post';
+
+	const sortOrderOptions = isItemsMode
+		? [
+				{ label: __('Timeline order', 'we-timeline'), value: 'manual' },
+				{ label: __('By date (oldest first)', 'we-timeline'), value: 'asc' },
+				{ label: __('By date (newest first)', 'we-timeline'), value: 'desc' },
+			]
+		: [
+				{ label: __('Oldest first', 'we-timeline'), value: 'asc' },
+				{ label: __('Newest first', 'we-timeline'), value: 'desc' },
+				...(!isStandardPostType
+					? [{ label: __('Menu order', 'we-timeline'), value: 'manual' }]
+					: []),
+			];
+
+	const sortOrderHelp = isItemsMode
+		? __('Timeline order keeps items in the same sequence as in the editor. Date options sort all items by their date field.', 'we-timeline')
+		: isStandardPostType
+			? __('Sort posts by publish date.', 'we-timeline')
+			: __('Sort by publish date, or use the Order field from the post editor (Page attributes).', 'we-timeline');
 
 	// Ensure postType is always set in block attributes (posts mode).
 	useEffect(() => {
@@ -515,13 +540,11 @@ export default function Edit({ attributes, setAttributes }) {
 					)}
 
 					<SelectControl
-						label={__('Sort Order', 'we-timeline')}
-						value={sortOrder}
-						options={[
-							{ label: __('Ascending', 'we-timeline'), value: 'asc' },
-							{ label: __('Descending', 'we-timeline'), value: 'desc' },
-						]}
+						label={__('Sort order', 'we-timeline')}
+						value={sortOrder || 'asc'}
+						options={sortOrderOptions}
 						onChange={(value) => setAttributes({ sortOrder: value })}
+						help={sortOrderHelp}
 					/>
 				</PanelBody>
 
@@ -622,6 +645,61 @@ export default function Edit({ attributes, setAttributes }) {
 								]}
 								onChange={(value) => setAttributes({ menuGranularity: value })}
 							/>
+							<SelectControl
+								label={__('Mobile menu', 'we-timeline')}
+								value={menuMobileMode || 'inherit'}
+								options={[
+									{ label: __('Same as desktop', 'we-timeline'), value: 'inherit' },
+									{ label: __('Coarser granularity', 'we-timeline'), value: 'granularity' },
+									{ label: __('Collapsed (select)', 'we-timeline'), value: 'collapsed' },
+									{ label: __('Short labels', 'we-timeline'), value: 'short-labels' },
+									{ label: __('Scrollable sticky bar', 'we-timeline'), value: 'scroll' },
+									{ label: __('Hidden (desktop only)', 'we-timeline'), value: 'hidden' },
+								]}
+								onChange={(value) => setAttributes({ menuMobileMode: value })}
+								help={__(
+									'Optional override below the mobile breakpoint. Visible on the frontend only.',
+									'we-timeline'
+								)}
+							/>
+							<RangeControl
+								label={__('Mobile breakpoint (px)', 'we-timeline')}
+								value={menuMobileBreakpoint || 768}
+								onChange={(value) => setAttributes({ menuMobileBreakpoint: value })}
+								min={480}
+								max={1200}
+								step={1}
+								help={__(
+									'Viewport width at which the mobile menu override applies.',
+									'we-timeline'
+								)}
+							/>
+							{(menuMobileMode || 'inherit') === 'granularity' && (
+								<SelectControl
+									label={__('Mobile menu granularity', 'we-timeline')}
+									value={menuGranularityMobile || 'decades'}
+									options={[
+										{ label: __('Auto', 'we-timeline'), value: 'auto' },
+										{ label: __('Decades', 'we-timeline'), value: 'decades' },
+										{ label: __('Years', 'we-timeline'), value: 'years' },
+										{ label: __('Months', 'we-timeline'), value: 'months' },
+										{ label: __('Items', 'we-timeline'), value: 'items' },
+									]}
+									onChange={(value) => setAttributes({ menuGranularityMobile: value })}
+								/>
+							)}
+							{(menuMobileMode || 'inherit') === 'short-labels' && (
+								<SelectControl
+									label={__('Mobile label format', 'we-timeline')}
+									value={menuMobileLabelFormat || 'year'}
+									options={[
+										{ label: __('Year only', 'we-timeline'), value: 'year' },
+										{ label: __('Year and title (truncated)', 'we-timeline'), value: 'year-title' },
+										{ label: __('Title (truncated)', 'we-timeline'), value: 'title-truncate' },
+									]}
+									onChange={(value) => setAttributes({ menuMobileLabelFormat: value })}
+								/>
+							)}
 							<TextControl
 								label={__('Sticky header selector', 'we-timeline')}
 								help={__(
