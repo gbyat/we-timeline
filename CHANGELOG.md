@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-06-10
+
+- Update package.json scripts for translation generation; modify release workflow to include PHP setup and streamline translation file generation. Remove unused editorScript reference in block.json files and update asset versions for timeline and timeline-item components.
+
+
 ## [1.3.0] - 2026-06-10
 
 - Enhance timeline block with new mobile menu attributes; add options for mobile mode, granularity, label format, and breakpoint. Update asset versions for timeline and timeline-item components.
@@ -73,3 +78,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.2.2]: https://github.com/gbyat/we-timeline/releases/tag/v1.2.2
 [1.2.3]: https://github.com/gbyat/we-timeline/releases/tag/v1.2.3
 [1.3.0]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.0
+[1.3.1]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.1
