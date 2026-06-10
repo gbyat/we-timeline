@@ -64,7 +64,7 @@ class Renderer
         }
 
         if (empty($posts)) {
-            return '<p>' . esc_html__('No timeline items found.', 'we-timeline') . '</p>';
+            return '<p>' . esc_html(Settings::get_frontend_string('no_items_found')) . '</p>';
         }
 
         // Store timeline page reference for each post (only on frontend, not in editor).
@@ -215,7 +215,7 @@ class Renderer
                 $menu_mobile_label_format = self::sanitize_menu_mobile_label_format($attributes['menuMobileLabelFormat'] ?? 'year');
                 $menu_mobile_breakpoint   = self::sanitize_menu_mobile_breakpoint($attributes['menuMobileBreakpoint'] ?? 768);
                 ?>
-                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>" data-menu-mobile-mode="<?php echo esc_attr($menu_mobile_mode); ?>" data-menu-granularity-mobile="<?php echo esc_attr($menu_granularity_mobile); ?>" data-menu-mobile-label-format="<?php echo esc_attr($menu_mobile_label_format); ?>" data-menu-mobile-breakpoint="<?php echo esc_attr((string) $menu_mobile_breakpoint); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr__('Jump to timeline periods', 'we-timeline'); ?>">
+                <nav class="<?php echo esc_attr(self::get_menu_classes($attributes)); ?>" data-granularity="<?php echo esc_attr($menu_granularity); ?>" data-decade-suffix="<?php echo esc_attr(self::get_decade_suffix()); ?>" data-timeline-id="<?php echo esc_attr($block_id); ?>" data-menu-separators="<?php echo esc_attr($menu_separators); ?>" data-menu-mobile-mode="<?php echo esc_attr($menu_mobile_mode); ?>" data-menu-granularity-mobile="<?php echo esc_attr($menu_granularity_mobile); ?>" data-menu-mobile-label-format="<?php echo esc_attr($menu_mobile_label_format); ?>" data-menu-mobile-breakpoint="<?php echo esc_attr((string) $menu_mobile_breakpoint); ?>"<?php echo '' !== $menu_separator_char ? ' data-menu-separator-char="' . esc_attr($menu_separator_char) . '"' : ''; ?> aria-label="<?php echo esc_attr(Settings::get_frontend_string('menu_aria_label')); ?>">
                     <div class="we-timeline-menu__items">
                         <?php foreach ($menu_items as $menu_index => $menu_item) : ?>
                             <?php if ($menu_index > 0 && '' !== $menu_separator_char) : ?>
@@ -655,7 +655,7 @@ class Renderer
         if ('' !== $label) {
             return $label;
         }
-        return __('Untitled item', 'we-timeline');
+        return Settings::get_frontend_string('untitled_item');
     }
 
     /**
@@ -883,8 +883,7 @@ class Renderer
      */
     public static function get_decade_suffix()
     {
-        /* translators: Suffix for decade labels. E.g. "s" → 1920s (English), "er" → 1920er (German). */
-        return _x('s', 'decade suffix', 'we-timeline');
+        return Settings::get_frontend_string('decade_suffix');
     }
 
     /**
@@ -1337,7 +1336,7 @@ class Renderer
                     <?php endif; ?>
                     <?php if (! empty($post['permalink']) && empty($attributes['showFullContent'])) : ?>
                         <a href="<?php echo esc_url($post['permalink']); ?>" class="we-timeline__item-read-more">
-                            <?php echo esc_html__('Read more', 'we-timeline'); ?>
+                            <?php echo esc_html(Settings::get_frontend_string('read_more')); ?>
                         </a>
                     <?php endif; ?>
                 </div>

@@ -21,6 +21,5 @@
 		"html": false,
 		"reusable": false,
 		"multiple": false
-	},
-	"editorScript": "file:./index.js"
+	}
 }

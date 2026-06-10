@@ -57,9 +57,7 @@ class Settings
             array(
                 'type'              => 'array',
                 'sanitize_callback' => array($this, 'sanitize_settings'),
-                'default'           => array(
-                    'enable_post_type' => false,
-                ),
+                'default'           => self::get_default_settings(),
             )
         );
 
@@ -93,6 +91,27 @@ class Settings
             'we_timeline_exclusion_section',
             array('label_for' => '')
         );
+
+        add_settings_section(
+            'we_timeline_frontend_strings_section',
+            __('Frontend text', 'we-timeline'),
+            array($this, 'render_frontend_strings_section_description'),
+            'we-timeline-settings'
+        );
+
+        foreach (self::get_frontend_string_definitions() as $string_key => $definition) {
+            add_settings_field(
+                'frontend_string_' . $string_key,
+                $definition['label'],
+                array($this, 'render_frontend_string_field'),
+                'we-timeline-settings',
+                'we_timeline_frontend_strings_section',
+                array(
+                    'string_key' => $string_key,
+                    'description' => $definition['description'],
+                )
+            );
+        }
     }
 
     /**
@@ -103,12 +122,23 @@ class Settings
      */
     public function sanitize_settings($input)
     {
-        $sanitized = array();
+        $sanitized = array(
+            'enable_post_type' => false,
+            'frontend_strings' => array(),
+        );
 
         if (isset($input['enable_post_type'])) {
             $sanitized['enable_post_type'] = (bool) $input['enable_post_type'];
-        } else {
-            $sanitized['enable_post_type'] = false;
+        }
+
+        if (isset($input['frontend_strings']) && is_array($input['frontend_strings'])) {
+            foreach (self::get_frontend_string_definitions() as $string_key => $definition) {
+                $raw = $input['frontend_strings'][ $string_key ] ?? '';
+                $raw = is_string($raw) ? trim(wp_unslash($raw)) : '';
+                if ('' !== $raw) {
+                    $sanitized['frontend_strings'][ $string_key ] = sanitize_text_field($raw);
+                }
+            }
         }
 
         return $sanitized;
@@ -230,6 +260,57 @@ class Settings
     }
 
     /**
+     * Render frontend strings section description.
+     */
+    public function render_frontend_strings_section_description()
+    {
+        echo '<p>' . esc_html__('Override text shown to site visitors on the frontend. Leave a field empty to use the plugin default (still translatable via language files).', 'we-timeline') . '</p>';
+    }
+
+    /**
+     * Render a single frontend string settings field.
+     *
+     * @param array $args Field arguments.
+     */
+    public function render_frontend_string_field($args)
+    {
+        $string_key  = $args['string_key'] ?? '';
+        $description = $args['description'] ?? '';
+        $settings    = $this->get_settings();
+        $defaults    = self::get_default_frontend_strings();
+        $value       = $settings['frontend_strings'][ $string_key ] ?? '';
+        $default     = $defaults[ $string_key ] ?? '';
+        $field_id    = 'we-timeline-frontend-string-' . $string_key;
+        $field_name  = self::OPTION_NAME . '[frontend_strings][' . $string_key . ']';
+
+        if ('' === $string_key || ! isset($defaults[ $string_key ])) {
+            return;
+        }
+        ?>
+        <input
+            type="text"
+            id="<?php echo esc_attr($field_id); ?>"
+            name="<?php echo esc_attr($field_name); ?>"
+            value="<?php echo esc_attr($value); ?>"
+            class="regular-text"
+            placeholder="<?php echo esc_attr($default); ?>"
+        />
+        <?php if ('' !== $description) : ?>
+            <p class="description"><?php echo esc_html($description); ?></p>
+        <?php endif; ?>
+        <p class="description">
+            <?php
+            printf(
+                /* translators: %s: default string value */
+                esc_html__('Default: %s', 'we-timeline'),
+                esc_html($default)
+            );
+            ?>
+        </p>
+        <?php
+    }
+
+    /**
      * Render section description.
      */
     public function render_section_description()
@@ -310,13 +391,92 @@ class Settings
      */
     public static function get_settings()
     {
-        $defaults = array(
-            'enable_post_type' => false,
+        $settings = get_option(self::OPTION_NAME, self::get_default_settings());
+
+        return wp_parse_args($settings, self::get_default_settings());
+    }
+
+    /**
+     * Default plugin settings.
+     *
+     * @return array
+     */
+    public static function get_default_settings()
+    {
+        return array(
+            'enable_post_type'   => false,
+            'frontend_strings'   => array(),
         );
+    }
 
-        $settings = get_option(self::OPTION_NAME, $defaults);
+    /**
+     * Frontend string definitions for the settings page.
+     *
+     * @return array<string, array{label: string, description: string}>
+     */
+    public static function get_frontend_string_definitions()
+    {
+        return array(
+            'read_more'       => array(
+                'label'       => __('Read more link', 'we-timeline'),
+                'description' => __('Shown when a timeline item displays an excerpt and links to the full post.', 'we-timeline'),
+            ),
+            'decade_suffix'   => array(
+                'label'       => __('Decade suffix', 'we-timeline'),
+                'description' => __('Appended to decade menu labels, e.g. "s" for 1920s or "er" for 1920er.', 'we-timeline'),
+            ),
+            'menu_aria_label' => array(
+                'label'       => __('Menu accessibility label', 'we-timeline'),
+                'description' => __('Screen reader label for the timeline jump navigation.', 'we-timeline'),
+            ),
+            'untitled_item'   => array(
+                'label'       => __('Untitled item label', 'we-timeline'),
+                'description' => __('Fallback label in the navigation when an item has no title.', 'we-timeline'),
+            ),
+            'no_items_found'  => array(
+                'label'       => __('Empty timeline message', 'we-timeline'),
+                'description' => __('Shown when a timeline block has no items to display.', 'we-timeline'),
+            ),
+        );
+    }
 
-        return wp_parse_args($settings, $defaults);
+    /**
+     * Default visitor-facing strings (translatable).
+     *
+     * @return array<string, string>
+     */
+    public static function get_default_frontend_strings()
+    {
+        return array(
+            'read_more'       => __('Read more', 'we-timeline'),
+            'decade_suffix'   => _x('s', 'decade suffix', 'we-timeline'),
+            'menu_aria_label' => __('Jump to timeline periods', 'we-timeline'),
+            'untitled_item'   => __('Untitled item', 'we-timeline'),
+            'no_items_found'  => __('No timeline items found.', 'we-timeline'),
+        );
+    }
+
+    /**
+     * Resolve a visitor-facing string (custom setting or default).
+     *
+     * @param string $key String key from get_default_frontend_strings().
+     * @return string
+     */
+    public static function get_frontend_string($key)
+    {
+        $defaults = self::get_default_frontend_strings();
+        if (! isset($defaults[ $key ])) {
+            return '';
+        }
+
+        $settings = self::get_settings();
+        $custom   = $settings['frontend_strings'][ $key ] ?? '';
+
+        if (is_string($custom) && '' !== trim($custom)) {
+            return $custom;
+        }
+
+        return $defaults[ $key ];
     }
 
     /**

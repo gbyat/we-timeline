@@ -80,6 +80,8 @@ import './timeline-progress.js';
             return;
         }
 
+        let stickyTopRaf = 0;
+
         const updateStickyMenuTop = () => {
             let top = 0;
             const adminBar = document.getElementById('wpadminbar');
@@ -87,13 +89,67 @@ import './timeline-progress.js';
                 top = Math.max(top, adminBar.getBoundingClientRect().bottom);
             }
             top = Math.max(top, measureStickyHeaderInset(timelineBlock));
-            timelineBlock.style.setProperty('--we-timeline-sticky-menu-top', `${top}px`);
+            // Ceil avoids a 1px gap when theme headers animate height with subpixel values.
+            timelineBlock.style.setProperty('--we-timeline-sticky-menu-top', `${Math.ceil(top)}px`);
             updateScrollMarginTop(timelineBlock);
         };
 
+        const scheduleStickyMenuTopUpdate = () => {
+            if (stickyTopRaf) {
+                return;
+            }
+            stickyTopRaf = window.requestAnimationFrame(() => {
+                stickyTopRaf = 0;
+                updateStickyMenuTop();
+            });
+        };
+
         updateStickyMenuTop();
-        window.addEventListener('scroll', updateStickyMenuTop, { passive: true });
-        window.addEventListener('resize', updateStickyMenuTop, { passive: true });
+        window.addEventListener('scroll', scheduleStickyMenuTopUpdate, { passive: true });
+        window.addEventListener('resize', scheduleStickyMenuTopUpdate, { passive: true });
+
+        // Shrinking sticky headers often animate via CSS after scroll stops; scroll events alone miss that.
+        observeStickyHeaderSizeChanges(timelineBlock, scheduleStickyMenuTopUpdate);
+    }
+
+    /**
+     * Re-measure sticky menu offset when the theme header resizes (CSS transitions, class toggles).
+     *
+     * @param {Element}  timelineBlock Timeline root element.
+     * @param {Function} callback      Update handler.
+     */
+    function observeStickyHeaderSizeChanges(timelineBlock, callback) {
+        const selector = (timelineBlock.dataset.stickyHeaderSelector || '').trim();
+        const doc = timelineBlock.ownerDocument;
+
+        const observeElement = (element) => {
+            if (!element || element.dataset.weTimelineStickyObserve === '1') {
+                return;
+            }
+            element.dataset.weTimelineStickyObserve = '1';
+
+            if (typeof ResizeObserver !== 'undefined') {
+                const observer = new ResizeObserver(callback);
+                observer.observe(element);
+            }
+
+            element.addEventListener('transitionrun', callback);
+            element.addEventListener('transitionend', callback);
+            element.addEventListener('animationend', callback);
+        };
+
+        const adminBar = doc.getElementById('wpadminbar');
+        observeElement(adminBar);
+
+        if (!selector) {
+            return;
+        }
+
+        try {
+            doc.querySelectorAll(selector).forEach(observeElement);
+        } catch (error) {
+            // Invalid selector — ignore.
+        }
     }
 
     /**

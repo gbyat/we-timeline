@@ -25,11 +25,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: wp-cli
+
       - name: Build plugin
         run: npm run build
 
-      - name: Generate POT file
-        run: npm run pot
+      - name: Generate translation files
+        run: |
+          npm run pot
+          npm run i18n:update-po
+          npm run json
 
       - name: Create ZIP file
         run: |

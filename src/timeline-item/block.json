@@ -40,7 +40,6 @@
 		"reusable": false,
 		"anchor": true
 	},
-	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
 	"style": "file:../timeline/index.css"
 }

@@ -1305,7 +1305,8 @@
             max-width: 100%;
             margin-bottom: 2rem;
             padding: 0.75rem 0;
-            box-shadow: none;
+            // Cover subpixel gaps while theme headers shrink between scroll frames.
+            box-shadow: 0 -6px 0 0 var(--we-timeline-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
             transform: none;
             right: auto;
             overflow: visible;
