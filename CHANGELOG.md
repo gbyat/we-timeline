@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-06-10
+
+- Add 'menuSortOrder' attribute to timeline block; update asset versions and styles for improved mobile menu functionality.
+
+
 ## [1.3.3] - 2026-06-10
 
 - Remove REST API functionality by deleting the Rest_Api class; update README to reflect this change. Enhance Renderer class with a new method to resolve post IDs from block attributes and improve timeline link synchronization on post save.
@@ -91,3 +96,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.3.1]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.1
 [1.3.2]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.2
 [1.3.3]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.3
+[1.3.4]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.4
