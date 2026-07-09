@@ -164,9 +164,14 @@ export default function Edit({ attributes, setAttributes }) {
 		}
 	}, [layout, position, setAttributes]);
 
+	const isAlternatingLayout = layout !== 'horizontal-scroll' && position === 'alternating';
+	const layoutControlValue = isAlternatingLayout
+		? 'vertical-alternating'
+		: (layout || 'vertical');
+
 	const layoutClass = layout === 'horizontal-scroll'
 		? `we-timeline--horizontal-scroll-${position || 'top'}`
-		: position === 'alternating'
+		: isAlternatingLayout
 			? 'we-timeline--vertical-alternating'
 			: `we-timeline--vertical-${position || 'left'}`;
 
@@ -396,32 +401,42 @@ export default function Edit({ attributes, setAttributes }) {
 
 					<SelectControl
 						label={__('Layout', 'we-timeline')}
-						value={layout || 'vertical'}
+						value={layoutControlValue}
 						options={[
 							{ label: __('Vertical', 'we-timeline'), value: 'vertical' },
+							{ label: __('Alternating', 'we-timeline'), value: 'vertical-alternating' },
 							{ label: __('Horizontal Scroll', 'we-timeline'), value: 'horizontal-scroll' },
 						]}
 						onChange={(value) => {
-							const defaultPosition = value === 'vertical' ? 'left' : 'top';
-							setAttributes({ layout: value, position: defaultPosition });
+							if (value === 'vertical-alternating') {
+								setAttributes({ layout: 'vertical', position: 'alternating' });
+								return;
+							}
+							if (value === 'vertical') {
+								setAttributes({
+									layout: 'vertical',
+									position: position === 'alternating' ? 'left' : (position || 'left'),
+								});
+								return;
+							}
+							setAttributes({ layout: value, position: 'top' });
 						}}
+						help={
+							isAlternatingLayout
+								? __('Cards alternate left and right of a center line with icons. On small screens, items stack on the right of the line.', 'we-timeline')
+								: undefined
+						}
 					/>
 
-					{layout !== 'horizontal-scroll' && (
+					{layout !== 'horizontal-scroll' && !isAlternatingLayout && (
 						<SelectControl
 							label={__('Position', 'we-timeline')}
 							value={position || 'left'}
 							options={[
 								{ label: __('Left', 'we-timeline'), value: 'left' },
 								{ label: __('Right', 'we-timeline'), value: 'right' },
-								{ label: __('Alternating', 'we-timeline'), value: 'alternating' },
 							]}
 							onChange={(value) => setAttributes({ position: value })}
-							help={
-								position === 'alternating'
-									? __('Cards alternate left and right of a center line with icons. On small screens, items stack on the right of the line.', 'we-timeline')
-									: undefined
-							}
 						/>
 					)}
 
