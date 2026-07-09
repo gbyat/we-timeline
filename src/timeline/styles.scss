@@ -1538,25 +1538,10 @@
 
     svg {
         display: block;
-        width: 1rem;
-        height: 1rem;
+        width: 70%;
+        height: 70%;
         fill: currentColor;
     }
-}
-
-.we-timeline__item-icon--small .we-timeline__item-icon-svg svg {
-    width: 0.75rem;
-    height: 0.75rem;
-}
-
-.we-timeline__item-icon--medium .we-timeline__item-icon-svg svg {
-    width: 1rem;
-    height: 1rem;
-}
-
-.we-timeline__item-icon--large .we-timeline__item-icon-svg svg {
-    width: 1.25rem;
-    height: 1.25rem;
 }
 
 // Custom items: free inner layout (title, columns, etc. inside InnerBlocks)
