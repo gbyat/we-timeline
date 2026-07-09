@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-07-09
+
+- Update timeline block icon SVG for improved rendering; adjust icon sizes for better responsiveness. Update asset versions for timeline and timeline-item components.
+- Update timeline block icon SVG for improved rendering; adjust icon sizes in styles for better responsiveness. Update asset versions for timeline and timeline-item components.
+- Update timeline block icon to SVG format; enhance icon rendering in the editor and adjust styles for improved layout. Update asset versions and translations for new icon support.
+- Refactor timeline styles to enhance layout flexibility; introduce mixin for item card styling and adjust CSS for alternating layout. Update asset versions for timeline and timeline-item components.
+- Update timeline block to support alternating layout; adjust layout handling in edit component and update asset version.
+
+
 ## [1.4.0] - 2026-07-09
 
 - Implement duplicate meta cleanup for timeline links; add normalization method for page IDs. Enhance timeline block with alternating layout option and update styles accordingly. Update translations for new layout feature.
@@ -115,3 +124,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.3.5]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.5
 [1.3.6]: https://github.com/gbyat/we-timeline/releases/tag/v1.3.6
 [1.4.0]: https://github.com/gbyat/we-timeline/releases/tag/v1.4.0
+[1.4.1]: https://github.com/gbyat/we-timeline/releases/tag/v1.4.1
