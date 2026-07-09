@@ -564,6 +564,10 @@ msgid "Circle"
 msgstr "Kreis"
 
 #: build/timeline/index.js:1
+msgid "Arrow down"
+msgstr "Pfeil nach unten"
+
+#: build/timeline/index.js:1
 msgid "Dot"
 msgstr "Punkt"
 

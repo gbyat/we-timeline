@@ -1510,11 +1510,7 @@ class Renderer
         <article <?php echo self::build_attributes($item_data_attrs); ?>>
             <?php if ($has_icon) : ?>
                 <div class="we-timeline__item-icon we-timeline__item-icon--<?php echo esc_attr($icon_size); ?>">
-                    <?php if ($icon === 'dot') : ?>
-                        <span class="we-timeline__item-icon-dot"></span>
-                    <?php else : ?>
-                        <span class="dashicons dashicons-<?php echo esc_attr($icon); ?>"></span>
-                    <?php endif; ?>
+                    <?php echo Icons::render_timeline_icon($icon); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helper. ?>
                 </div>
             <?php endif; ?>
             <?php $free_layout = ! empty($post['free_layout']); ?>

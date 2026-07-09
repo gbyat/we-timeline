@@ -477,6 +477,7 @@ export default function Edit({ attributes, setAttributes }) {
 							{ label: __('Flag', 'we-timeline'), value: 'flag' },
 							{ label: __('Marker', 'we-timeline'), value: 'location' },
 							{ label: __('Circle', 'we-timeline'), value: 'marker' },
+							{ label: __('Arrow down', 'we-timeline'), value: 'arrow-down' },
 							{ label: __('Dot', 'we-timeline'), value: 'dot' },
 							{ label: __('None', 'we-timeline'), value: '' },
 						]}

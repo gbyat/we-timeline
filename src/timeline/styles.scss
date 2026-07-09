@@ -1527,6 +1527,23 @@
     scroll-margin-bottom: 1rem;
 }
 
+.we-timeline__item-icon-svg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+
+    svg {
+        display: block;
+        width: 72%;
+        height: auto;
+        max-height: 100%;
+        fill: currentColor;
+    }
+}
+
 // Custom items: free inner layout (title, columns, etc. inside InnerBlocks)
 .we-timeline__item-content--free {
     display: block;
