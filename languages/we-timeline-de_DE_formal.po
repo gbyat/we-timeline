@@ -513,6 +513,14 @@ msgid "Right"
 msgstr "Rechts"
 
 #: build/timeline/index.js:1
+msgid "Alternating"
+msgstr "Wechselnd"
+
+#: build/timeline/index.js:1
+msgid "Cards alternate left and right of a center line with icons. On small screens, items stack on the right of the line."
+msgstr "Karten wechseln links und rechts einer Mittellinie mit Symbolen. Auf kleinen Bildschirmen stehen die Einträge rechts neben der Linie."
+
+#: build/timeline/index.js:1
 #, fuzzy
 msgid "Top"
 msgstr "Oben"

@@ -533,16 +533,19 @@
         }
     }
 
-    // Vertical layout - Alternating
+    // Vertical layout - Alternating (center line, cards left/right, staggered spacing)
     &.we-timeline--vertical-alternating {
+        --we-timeline-alternate-gutter: 1.75rem;
+        --we-timeline-alternate-stagger: 2.5rem;
+
         .we-timeline__items {
             position: relative;
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
+            gap: 0;
+            padding: 0;
+            max-width: 100%;
 
             &::before {
                 content: '';
@@ -556,208 +559,165 @@
                 z-index: 0;
             }
 
-            // Position icons on the timeline line for left items (icon goes to the right edge)
-            .we-timeline__item--left .we-timeline__item-icon {
-                left: auto !important;
-                right: -1.5rem !important;
-                transform: translateX(50%) !important;
-            }
-
-            .we-timeline__item--left[data-has-icon="false"]::before {
-                left: auto !important;
-                right: -1.5rem !important;
-                transform: translateX(50%) !important;
-            }
-
-            // Position icons on the timeline line for right items (icon goes to the left edge)
-            .we-timeline__item--right .we-timeline__item-icon {
-                left: -1.5rem !important;
-                right: auto !important;
-                transform: translateX(-50%) !important;
-            }
-
-            .we-timeline__item--right[data-has-icon="false"]::before {
-                left: -1.5rem !important;
-                right: auto !important;
-                transform: translateX(-50%) !important;
-            }
-
-            // Progress line (filled portion)
             &::after {
                 content: '';
                 position: absolute;
                 left: 50%;
                 top: 0;
                 width: 3px;
-                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                background: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--we-timeline-primary)));
                 transform: translateX(-50%);
                 z-index: 1;
                 height: var(--progress-height, 0%);
-                transition: height 0.3s ease;
+                transition: height 0.1s ease-out;
+            }
+        }
+
+        .we-timeline__item {
+            position: relative;
+            z-index: 2;
+            width: calc(50% - var(--we-timeline-alternate-gutter));
+            max-width: 34rem;
+            margin-bottom: var(--we-timeline-items-gap, 2rem);
+            padding-top: 0.25rem;
+            background: var(--we-timeline-item-background, transparent);
+            border-radius: var(--we-timeline-item-border-radius, 0);
+            box-shadow: var(--we-timeline-item-shadow, none);
+
+            &-content {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .we-timeline__item {
-                position: relative;
-                z-index: 2; // Über der Progress-Linie (z-index: 1)
-                width: calc(50% - 1.5rem); // 1.5rem Abstand von der Linie
-                max-width: 500px; // Max width für bessere Lesbarkeit
-                margin-bottom: 2.5rem;
-                background: var(--we-timeline-item-background, transparent);
-                border-radius: var(--we-timeline-item-border-radius, 0);
-                padding: 1.5rem;
-                box-shadow: var(--we-timeline-item-shadow, none);
-                transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            &-thumbnail {
+                width: 100%;
+                flex-shrink: 0;
 
-                // Highlight active item
-                &.is-active {
-                    box-shadow: var(--we-timeline-item-shadow-active, 0 4px 12px rgba(0, 0, 0, 0.15));
-                    opacity: 1;
-                    border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                img {
+                    width: 100%;
+                    height: auto;
+                    border-radius: 4px;
+                    object-fit: cover;
                 }
+            }
 
-                // Fade out non-active items slightly when one is active
-                &:not(.is-active) {
-                    opacity: 0.85;
-                }
+            &-body {
+                flex: 1;
+            }
 
-                &-icon {
-                    position: absolute;
-                    top: 0;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
-                    border-radius: 50%;
-                    z-index: 10; // Höherer z-index, damit es über der Linie ist
-                    border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+            &-icon {
+                position: absolute;
+                top: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                border-radius: 50%;
+                z-index: 10;
+                border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
 
-                    // Icon sizes (smaller than before)
-                    &--small {
-                        width: 0.75rem;
-                        height: 0.75rem;
-                        border-width: 1px;
-
-                        .dashicons {
-                            font-size: 0.5rem;
-                            width: 0.5rem;
-                            height: 0.5rem;
-                        }
-
-                        .we-timeline__item-icon-dot {
-                            width: 0.4rem;
-                            height: 0.4rem;
-                        }
-                    }
-
-                    &--medium {
-                        width: 1rem;
-                        height: 1rem;
-                        border-width: 2px;
-
-                        .dashicons {
-                            font-size: 0.75rem;
-                            width: 0.75rem;
-                            height: 0.75rem;
-                        }
-
-                        .we-timeline__item-icon-dot {
-                            width: 0.6rem;
-                            height: 0.6rem;
-                        }
-                    }
-
-                    &--large {
-                        width: 1.5rem;
-                        height: 1.5rem;
-                        border-width: 2px;
-
-                        .dashicons {
-                            font-size: 1rem;
-                            width: 1rem;
-                            height: 1rem;
-                        }
-
-                        .we-timeline__item-icon-dot {
-                            width: 0.9rem;
-                            height: 0.9rem;
-                        }
-                    }
+                &--small {
+                    width: 1.25rem;
+                    height: 1.25rem;
+                    border-width: 2px;
 
                     .dashicons {
-                        color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                        font-size: 0.75rem;
+                        width: 0.75rem;
+                        height: 0.75rem;
                     }
 
-                    &-dot {
-                        display: block;
-                        border-radius: 50%;
-                        background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    .we-timeline__item-icon-dot {
+                        width: 0.5rem;
+                        height: 0.5rem;
                     }
                 }
 
-                // Fallback circle if no icon
-                &[data-has-icon="false"]::before {
-                    content: '';
-                    position: absolute;
-                    top: 0;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 0.75rem;
-                    height: 0.75rem;
-                    border-radius: 50%;
-                    background: var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
-                    border: 2px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
-                    box-shadow: 0 0 0 2px var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary)));
-                    z-index: 2;
+                &--medium {
+                    width: 2rem;
+                    height: 2rem;
+                    border-width: 2px;
+
+                    .dashicons {
+                        font-size: 1rem;
+                        width: 1rem;
+                        height: 1rem;
+                    }
+
+                    .we-timeline__item-icon-dot {
+                        width: 0.75rem;
+                        height: 0.75rem;
+                    }
                 }
 
-                // Arrow pointing to icon/line (only show if item has background)
-                &::after {
-                    content: '';
-                    position: absolute;
-                    top: 0.5rem;
-                    width: 0;
-                    height: 0;
-                    border-style: solid;
-                    z-index: 1;
-                    display: none; // Hidden by default
+                &--large {
+                    width: 2.5rem;
+                    height: 2.5rem;
+                    border-width: 3px;
+
+                    .dashicons {
+                        font-size: 1.25rem;
+                        width: 1.25rem;
+                        height: 1.25rem;
+                    }
+
+                    .we-timeline__item-icon-dot {
+                        width: 1rem;
+                        height: 1rem;
+                    }
                 }
 
-                // Show arrow if item has background (check via data attribute or CSS variable)
-                &[data-has-background="true"]::after {
+                .dashicons {
+                    color: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                }
+
+                &-dot {
                     display: block;
+                    border-radius: 50%;
+                    background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
                 }
+            }
 
-                &--left {
-                    margin-right: calc(50% + 1.5rem); // Abstand von der Linie (50% + 1.5rem)
-                    margin-left: 0;
-                    padding-right: 1.5rem; // Abstand zwischen Item und Icon
-                    padding-top: 1.5rem; // Platz für Icon oben
+            &[data-has-icon="false"]::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                width: 0.75rem;
+                height: 0.75rem;
+                border-radius: 50%;
+                background: var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                border: 2px solid var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                box-shadow: 0 0 0 2px var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                z-index: 10;
+            }
 
-                    // Arrow pointing right to icon (centered on line)
-                    &::after {
-                        right: -0.75rem;
-                        top: 0.5rem;
-                        border-width: 5px 0 5px 7px;
-                        border-color: transparent transparent transparent var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff)));
-                    }
+            &--left,
+            &:nth-child(odd) {
+                align-self: flex-start;
+
+                .we-timeline__item-icon,
+                &[data-has-icon="false"]::before {
+                    right: calc(var(--we-timeline-alternate-gutter) * -1);
+                    left: auto;
+                    transform: translateX(50%);
                 }
+            }
 
-                &--right {
-                    margin-left: calc(50% + 1.5rem); // Abstand von der Linie (50% + 1.5rem)
-                    margin-right: 0;
-                    padding-left: 1.5rem; // Abstand zwischen Item und Icon
-                    padding-top: 1.5rem; // Platz für Icon oben
+            &--right,
+            &:nth-child(even) {
+                align-self: flex-end;
+                margin-top: calc(var(--we-timeline-alternate-stagger) * -1);
 
-                    // Arrow pointing left to icon (centered on line)
-                    &::after {
-                        left: -0.75rem;
-                        top: 0.5rem;
-                        border-width: 5px 7px 5px 0;
-                        border-color: transparent var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, #fff))) transparent transparent;
-                    }
+                .we-timeline__item-icon,
+                &[data-has-icon="false"]::before {
+                    left: calc(var(--we-timeline-alternate-gutter) * -1);
+                    right: auto;
+                    transform: translateX(-50%);
                 }
+            }
+
+            &:first-child {
+                margin-top: 0;
             }
         }
     }
@@ -1180,30 +1140,37 @@
         }
 
         &.we-timeline--vertical-alternating {
-            .we-timeline__items {
-                padding: 0 1rem;
+            --we-timeline-alternate-gutter: 1.25rem;
 
-                &::before {
-                    left: 1rem;
+            .we-timeline__items {
+                padding-left: 2.75rem;
+                padding-right: 0;
+
+                &::before,
+                &::after {
+                    left: 1.25rem;
+                    transform: none;
+                }
+            }
+
+            .we-timeline__item {
+                width: 100%;
+                max-width: none;
+                align-self: stretch !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                margin-top: 0 !important;
+                padding-top: 0.25rem;
+
+                & + .we-timeline__item {
+                    margin-top: var(--we-timeline-items-gap, 1.5rem);
                 }
 
-                .we-timeline__item {
-                    margin-left: 0 !important;
-                    margin-right: 0 !important;
-                    padding-left: 3rem !important;
-                    padding-right: 0 !important;
-
-                    &-icon {
-                        left: -1.5rem !important;
-                        right: auto !important;
-                        transform: translateX(-50%) !important;
-                    }
-
-                    &[data-has-icon="false"]::before {
-                        left: -1.5rem !important;
-                        right: auto !important;
-                        transform: translateX(-50%) !important;
-                    }
+                .we-timeline__item-icon,
+                &[data-has-icon="false"]::before {
+                    left: calc((var(--we-timeline-alternate-gutter) + 1.25rem) * -1) !important;
+                    right: auto !important;
+                    transform: translateX(-50%) !important;
                 }
             }
         }

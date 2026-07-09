@@ -410,7 +410,7 @@ namespace {
             if (file_exists($changelog_file)) {
                 $changelog_content = file_get_contents($changelog_file);
                 if ($changelog_content) {
-                    $changelog = $this->format_changelog_for_popup($changelog_content);
+                    $changelog = wp_kses_post($this->format_changelog_for_popup($changelog_content));
                 }
             }
 
@@ -423,7 +423,7 @@ namespace {
             if (file_exists($readme_file)) {
                 $readme_content = file_get_contents($readme_file);
                 if ($readme_content) {
-                    $description = $this->format_readme_for_popup($readme_content);
+                    $description = wp_kses_post($this->format_readme_for_popup($readme_content));
                 }
             }
 

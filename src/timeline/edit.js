@@ -166,7 +166,9 @@ export default function Edit({ attributes, setAttributes }) {
 
 	const layoutClass = layout === 'horizontal-scroll'
 		? `we-timeline--horizontal-scroll-${position || 'top'}`
-		: `we-timeline--vertical-${position || 'left'}`;
+		: position === 'alternating'
+			? 'we-timeline--vertical-alternating'
+			: `we-timeline--vertical-${position || 'left'}`;
 
 	const blockProps = useBlockProps({
 		className: `we-timeline wp-block-we-timeline-timeline ${isItemsMode ? layoutClass : ''}`,
@@ -412,8 +414,14 @@ export default function Edit({ attributes, setAttributes }) {
 							options={[
 								{ label: __('Left', 'we-timeline'), value: 'left' },
 								{ label: __('Right', 'we-timeline'), value: 'right' },
+								{ label: __('Alternating', 'we-timeline'), value: 'alternating' },
 							]}
 							onChange={(value) => setAttributes({ position: value })}
+							help={
+								position === 'alternating'
+									? __('Cards alternate left and right of a center line with icons. On small screens, items stack on the right of the line.', 'we-timeline')
+									: undefined
+							}
 						/>
 					)}
 

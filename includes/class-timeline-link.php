@@ -28,6 +28,11 @@ class Timeline_Link
     const ORDER_META_KEY = '_we_timeline_post_order';
 
     /**
+     * Option key to ensure duplicate meta cleanup runs once.
+     */
+    const META_CLEANUP_OPTION_KEY = 'we_timeline_meta_cleanup_done';
+
+    /**
      * Post types that can host a timeline block.
      *
      * @var array<string>
@@ -46,6 +51,7 @@ class Timeline_Link
         add_filter('get_next_post_sort', array($this, 'filter_adjacent_post_sort'), 10, 3);
 
         add_action('save_post', array($this, 'sync_timeline_links_on_save'), 20, 1);
+        add_action('admin_init', array($this, 'maybe_cleanup_duplicate_timeline_meta'));
     }
 
     /**
@@ -71,10 +77,7 @@ class Timeline_Link
 
         $needs_post_links = false;
         foreach ($post_ids as $post_id) {
-            $existing_pages = get_post_meta($post_id, self::META_KEY, false);
-            if (! is_array($existing_pages)) {
-                $existing_pages = array();
-            }
+            $existing_pages = self::normalize_page_ids(get_post_meta($post_id, self::META_KEY, false));
             if (! in_array($page_id, $existing_pages, true)) {
                 $needs_post_links = true;
                 break;
@@ -91,10 +94,7 @@ class Timeline_Link
 
         if ($needs_post_links) {
             foreach ($post_ids as $post_id) {
-                $existing_pages = get_post_meta($post_id, self::META_KEY, false);
-                if (! is_array($existing_pages)) {
-                    $existing_pages = array();
-                }
+                $existing_pages = self::normalize_page_ids(get_post_meta($post_id, self::META_KEY, false));
                 if (! in_array($page_id, $existing_pages, true)) {
                     add_post_meta($post_id, self::META_KEY, $page_id);
                 }
@@ -170,6 +170,81 @@ class Timeline_Link
         $normalized = array_values(array_filter($normalized));
 
         return $normalized;
+    }
+
+    /**
+     * Normalize timeline page IDs from post meta for strict comparisons.
+     *
+     * @param array<int|string> $page_ids Raw page IDs from post meta.
+     * @return array<int>
+     */
+    private static function normalize_page_ids($page_ids)
+    {
+        if (! is_array($page_ids)) {
+            return array();
+        }
+
+        $normalized = array_map('absint', $page_ids);
+        $normalized = array_values(array_filter($normalized));
+
+        return $normalized;
+    }
+
+    /**
+     * One-time cleanup for duplicate timeline page meta values.
+     *
+     * This is intentionally conservative: it only deduplicates values for the
+     * existing META_KEY and does not alter content or post entities.
+     *
+     * @return void
+     */
+    public function maybe_cleanup_duplicate_timeline_meta()
+    {
+        if (! current_user_can('manage_options')) {
+            return;
+        }
+
+        if ((int) get_option(self::META_CLEANUP_OPTION_KEY, 0) === 1) {
+            return;
+        }
+
+        $post_ids = get_posts(
+            array(
+                'post_type'              => 'any',
+                'post_status'            => 'any',
+                'fields'                 => 'ids',
+                'posts_per_page'         => -1,
+                'meta_key'               => self::META_KEY,
+                'no_found_rows'          => true,
+                'update_post_meta_cache' => false,
+                'update_post_term_cache' => false,
+            )
+        );
+
+        if (! is_array($post_ids) || empty($post_ids)) {
+            update_option(self::META_CLEANUP_OPTION_KEY, 1);
+            return;
+        }
+
+        foreach ($post_ids as $post_id) {
+            $post_id         = absint($post_id);
+            $raw_page_ids    = get_post_meta($post_id, self::META_KEY, false);
+            $existing_values = is_array($raw_page_ids) ? $raw_page_ids : array();
+            $normalized      = self::normalize_page_ids($existing_values);
+            $unique_values   = array_values(array_unique($normalized));
+
+            if ($normalized === $unique_values && count($existing_values) === count($unique_values)) {
+                continue;
+            }
+
+            delete_post_meta($post_id, self::META_KEY);
+
+            foreach ($unique_values as $page_id) {
+                add_post_meta($post_id, self::META_KEY, $page_id);
+            }
+        }
+
+        update_option(self::META_CLEANUP_OPTION_KEY, 1);
     }
 
     /**
