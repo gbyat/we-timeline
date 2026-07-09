@@ -4,6 +4,16 @@
  * @package Webentwicklerin\Timeline
  */
 
+@mixin we-timeline-item-card {
+    padding: var(--we-timeline-item-padding);
+    background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
+    border-width: var(--we-timeline-item-border-width, 1px);
+    border-style: var(--we-timeline-item-border-style, solid);
+    border-color: var(--we-timeline-item-border-color, var(--we-timeline-border));
+    border-radius: var(--we-timeline-item-border-radius, 8px);
+    box-shadow: var(--we-timeline-item-shadow, 0 2px 8px rgba(0, 0, 0, 0.1));
+}
+
 .wp-block-we-timeline-timeline {
     border: none;
     box-shadow: none;
@@ -43,7 +53,12 @@
         --we-timeline-item-background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
         --we-timeline-menu-background-color: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
 
-        .we-timeline__item {
+        &:not(.we-timeline--vertical-alternating) .we-timeline__item {
+            background: var(--we-timeline-item-background);
+        }
+
+        &.we-timeline--vertical-alternating .we-timeline__item-content,
+        &.we-timeline--vertical-alternating .we-timeline__item--editor > .block-editor-inner-blocks {
             background: var(--we-timeline-item-background);
         }
     }
@@ -87,14 +102,6 @@
         &__item {
             position: relative;
             scroll-margin-top: var(--we-timeline-scroll-margin-top, var(--we-timeline-nav-anchor-offset, 0.75rem));
-            padding: var(--we-timeline-item-padding, 1.5rem);
-            // Use WordPress background color if set, otherwise fallback
-            background: var(--we-timeline-item-background, var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background))));
-            border-width: var(--we-timeline-item-border-width, 1px);
-            border-style: var(--we-timeline-item-border-style, solid);
-            border-color: var(--we-timeline-item-border-color, var(--we-timeline-border));
-            border-radius: var(--we-timeline-item-border-radius, 8px);
-            box-shadow: var(--we-timeline-item-shadow, 0 2px 8px rgba(0, 0, 0, 0.1));
             transition: box-shadow 0.2s, opacity 0.2s;
 
             &:hover {
@@ -227,6 +234,11 @@
         }
     }
 
+    // Card chrome on the item itself (alternating applies the mixin on content / editor inner blocks).
+    &:not(.we-timeline--vertical-alternating) .we-timeline__item {
+        @include we-timeline-item-card;
+    }
+
     // Vertical layout - Left (default)
     &.we-timeline--vertical-left {
         .we-timeline__items {
@@ -263,7 +275,7 @@
                 background: var(--we-timeline-item-background, transparent);
                 border-radius: var(--we-timeline-item-border-radius, 0);
                 box-shadow: var(--we-timeline-item-shadow, none);
-                padding-top: 1.5rem; // Platz für Icon oben
+                padding-top: var(--we-timeline-item-padding);
 
                 &-content {
                     flex-direction: row;
@@ -533,18 +545,17 @@
         }
     }
 
-    // Vertical layout - Alternating (center line, cards left/right, staggered spacing)
+    // Vertical layout - Alternating (center line, cards left/right, icons on center track)
     &.we-timeline--vertical-alternating {
-        --we-timeline-alternate-gutter: 1.75rem;
-        --we-timeline-alternate-stagger: 2.5rem;
+        --we-timeline-alternate-track: 2.75rem;
+        --we-timeline-alternate-gutter: 1.25rem;
+        --we-timeline-alternate-stagger: 2rem;
 
         .we-timeline__items {
             position: relative;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
             gap: 0;
-            padding: 0;
             max-width: 100%;
 
             &::before {
@@ -574,19 +585,38 @@
         }
 
         .we-timeline__item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) var(--we-timeline-alternate-track) minmax(0, 1fr);
+            width: 100%;
+            max-width: none;
+            margin: 0 0 var(--we-timeline-items-gap, 2rem);
             position: relative;
             z-index: 2;
-            width: calc(50% - var(--we-timeline-alternate-gutter));
-            max-width: 34rem;
-            margin-bottom: var(--we-timeline-items-gap, 2rem);
-            padding-top: 0.25rem;
-            background: var(--we-timeline-item-background, transparent);
-            border-radius: var(--we-timeline-item-border-radius, 0);
-            box-shadow: var(--we-timeline-item-shadow, none);
+
+            &:hover {
+                box-shadow: none;
+
+                .we-timeline__item-content {
+                    box-shadow: var(--we-timeline-item-shadow-hover, 0 4px 12px rgba(0, 0, 0, 0.15));
+                }
+            }
+
+            &.is-active {
+                border: none;
+                box-shadow: none;
+
+                .we-timeline__item-content {
+                    border-color: var(--we-timeline-line-active-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                    box-shadow: var(--we-timeline-item-shadow-active, 0 4px 16px rgba(0, 0, 0, 0.2));
+                }
+            }
 
             &-content {
+                @include we-timeline-item-card;
+                grid-row: 1;
                 flex-direction: column;
                 align-items: stretch;
+                min-width: 0;
             }
 
             &-thumbnail {
@@ -606,11 +636,19 @@
             }
 
             &-icon {
-                position: absolute;
-                top: 0;
+                grid-column: 2;
+                grid-row: 1;
+                position: relative;
+                justify-self: center;
+                align-self: start;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                margin: 0;
+                left: auto;
+                right: auto;
+                top: auto;
+                transform: translateY(-50%);
                 background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
                 border-radius: 50%;
                 z-index: 10;
@@ -680,8 +718,13 @@
 
             &[data-has-icon="false"]::before {
                 content: '';
-                position: absolute;
-                top: 0;
+                grid-column: 2;
+                grid-row: 1;
+                position: relative;
+                justify-self: center;
+                align-self: start;
+                display: block;
+                transform: translateY(-50%);
                 width: 0.75rem;
                 height: 0.75rem;
                 border-radius: 50%;
@@ -693,31 +736,59 @@
 
             &--left,
             &:nth-child(odd) {
-                align-self: flex-start;
-
-                .we-timeline__item-icon,
-                &[data-has-icon="false"]::before {
-                    right: calc(var(--we-timeline-alternate-gutter) * -1);
-                    left: auto;
-                    transform: translateX(50%);
+                .we-timeline__item-content {
+                    grid-column: 1;
+                    margin-right: var(--we-timeline-alternate-gutter);
                 }
             }
 
             &--right,
             &:nth-child(even) {
-                align-self: flex-end;
                 margin-top: calc(var(--we-timeline-alternate-stagger) * -1);
 
-                .we-timeline__item-icon,
-                &[data-has-icon="false"]::before {
-                    left: calc(var(--we-timeline-alternate-gutter) * -1);
-                    right: auto;
-                    transform: translateX(-50%);
+                .we-timeline__item-content {
+                    grid-column: 3;
+                    margin-left: var(--we-timeline-alternate-gutter);
                 }
             }
 
             &:first-child {
                 margin-top: 0;
+            }
+        }
+
+        .we-timeline__item--editor {
+            margin-bottom: 0;
+
+            &::after {
+                content: '';
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: center;
+                align-self: start;
+                transform: translateY(-50%);
+                width: 1.25rem;
+                height: 1.25rem;
+                border-radius: 50%;
+                border: 2px solid var(--we-timeline-icon-color, var(--wp--preset--color--link, var(--wp--custom--color--link, var(--we-timeline-primary))));
+                background: var(--wp--preset--color--background, var(--wp--custom--color--background, var(--we-timeline-background)));
+                z-index: 10;
+            }
+
+            > .block-editor-inner-blocks {
+                @include we-timeline-item-card;
+                grid-row: 1;
+                min-width: 0;
+            }
+
+            &:nth-child(odd) > .block-editor-inner-blocks {
+                grid-column: 1;
+                margin-right: var(--we-timeline-alternate-gutter);
+            }
+
+            &:nth-child(even) > .block-editor-inner-blocks {
+                grid-column: 3;
+                margin-left: var(--we-timeline-alternate-gutter);
             }
         }
     }
@@ -1140,37 +1211,63 @@
         }
 
         &.we-timeline--vertical-alternating {
-            --we-timeline-alternate-gutter: 1.25rem;
+            --we-timeline-alternate-track: 2.5rem;
 
             .we-timeline__items {
-                padding-left: 2.75rem;
+                padding-left: 0;
                 padding-right: 0;
 
                 &::before,
                 &::after {
-                    left: 1.25rem;
-                    transform: none;
+                    left: calc(var(--we-timeline-alternate-track) / 2);
+                    transform: translateX(-50%);
                 }
             }
 
             .we-timeline__item {
+                grid-template-columns: var(--we-timeline-alternate-track) minmax(0, 1fr);
                 width: 100%;
-                max-width: none;
-                align-self: stretch !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
                 margin-top: 0 !important;
-                padding-top: 0.25rem;
 
                 & + .we-timeline__item {
                     margin-top: var(--we-timeline-items-gap, 1.5rem);
                 }
 
+                &--left,
+                &:nth-child(odd),
+                &--right,
+                &:nth-child(even) {
+                    .we-timeline__item-content {
+                        grid-column: 2;
+                        grid-row: 1;
+                        margin-left: var(--we-timeline-alternate-gutter);
+                        margin-right: 0;
+                    }
+                }
+
                 .we-timeline__item-icon,
                 &[data-has-icon="false"]::before {
-                    left: calc((var(--we-timeline-alternate-gutter) + 1.25rem) * -1) !important;
-                    right: auto !important;
-                    transform: translateX(-50%) !important;
+                    grid-column: 1;
+                    grid-row: 1;
+                    justify-self: center;
+                    transform: translateY(-50%);
+                    left: auto;
+                    right: auto;
+                }
+
+                &--editor {
+                    &::after {
+                        grid-column: 1;
+                        transform: translateY(-50%);
+                    }
+
+                    &:nth-child(odd) > .block-editor-inner-blocks,
+                    &:nth-child(even) > .block-editor-inner-blocks {
+                        grid-column: 2;
+                        grid-row: 1;
+                        margin-left: var(--we-timeline-alternate-gutter);
+                        margin-right: 0;
+                    }
                 }
             }
         }
@@ -1448,6 +1545,10 @@
 // Editor: timeline item block
 .we-timeline__item--editor {
     margin-bottom: 1.5rem;
+
+    .wp-block-we-timeline-timeline.we-timeline--vertical-alternating & {
+        margin-bottom: 0;
+    }
 
     .we-timeline__item-date-field {
         margin-bottom: 0.5rem;
